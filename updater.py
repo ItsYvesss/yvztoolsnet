@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 
 # ====== EDIT THESE TWO LINES ======
-GITHUB_REPO = "YOUR_USERNAME/YOUR_REPO"   # e.g. "yvz/yvztools"
+GITHUB_REPO = "ItsYvesss/yvztoolsnet"   # e.g. "yvz/yvztools"
 ASSET_NAME = "YVZNETMATH.exe"             # file name you upload to each Release
 # ==================================
 
