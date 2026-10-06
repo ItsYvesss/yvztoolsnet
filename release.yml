@@ -1,0 +1,30 @@
+name: Build and release YVZNETMATH
+
+# Runs when you push a tag like v2.9.2
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt
+      - name: Build YVZNETMATH.exe
+        shell: cmd
+        run: py -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZNETMATH --distpath dist --icon yvztools.ico --add-data "yvznetmath_core.py;." --add-data "yvztools.ico;." --hidden-import websocket --hidden-import requests --collect-submodules websocket yvz_gui.py
+      - name: Build YVZUPDATER.exe
+        shell: cmd
+        run: py -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZUPDATER --distpath dist --icon yvztools.ico updater.py
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/YVZNETMATH.exe
+            dist/YVZUPDATER.exe
