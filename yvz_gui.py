@@ -11,7 +11,7 @@ from tkinter import ttk, messagebox, simpledialog
 from pathlib import Path
 
 APP_NAME = 'YVZTOOLS — NetMath Space'
-VERSION = '2.9.1 GUI'
+VERSION = '2.9.4 GUI'
 BASE = Path(__file__).resolve().parent
 CORE_PATH = BASE / 'yvznetmath_core.py'
 
@@ -323,7 +323,7 @@ class App(tk.Tk):
                  font=('Segoe UI Black', 22)).pack(side='left')
         tk.Label(title_row, text='  NETMATH SPACE', bg=BG, fg=BLUE,
                  font=('Segoe UI Semibold', 11)).pack(side='left', pady=(7, 0))
-        tk.Label(title_row, text='V2.9', bg=PANEL2, fg=CYAN,
+        tk.Label(title_row, text='V2.9.4', bg=PANEL2, fg=CYAN,
                  font=('Segoe UI Semibold', 8), padx=10, pady=4).pack(side='right', pady=5)
         tk.Label(top, text='Desktop control center  •  Chrome + Gemini  •  fast math workflow',
                  bg=BG, fg=MUTED, font=('Segoe UI', 8)).pack(anchor='w', pady=(0, 3))
@@ -455,7 +455,7 @@ class App(tk.Tk):
         self.log.pack(fill='both', expand=True, padx=12, pady=(0, 5))
         self.log.configure(state='disabled')
 
-        self.write_log('V2.9 ready • R Chrome • Y Scan • A Solve • 1-4 Presets • T Theme')
+        self.write_log('V2.9.4 ready • R Chrome • Y Scan • A Solve • 1-4 Presets • T Theme')
 
     def write_log(self, text):
         self.log.configure(state='normal')
@@ -909,69 +909,123 @@ class App(tk.Tk):
             self.destroy()
 
 
+def _lerp_hex(a, b, t):
+    t = max(0.0, min(1.0, t))
+    a, b = a.lstrip('#'), b.lstrip('#')
+    ca = [int(a[i:i+2], 16) for i in (0, 2, 4)]
+    cb = [int(b[i:i+2], 16) for i in (0, 2, 4)]
+    return '#%02x%02x%02x' % tuple(int(x + (y - x) * t) for x, y in zip(ca, cb))
+
+
 class YVZSplash(tk.Tk):
-    """Short animated startup screen shown before the main app."""
+    """Animated startup screen: centered, fade in/out, rotating rings, smooth progress."""
+    W, H = 640, 380
+    DURATION = 2.8
+    PALETTES = {
+        'dark':   dict(top='#030614', bot='#0B1233', star='#7FA9FF', ring1='#1B3A8C', ring2='#5B34A0', accent='#4A9BFF', accent2='#9A6BFF', text='#F4F7FF', sub='#61D8FF', muted='#91A1CC', track='#14204D'),
+        'pink':   dict(top='#FFF8FC', bot='#FFE6F0', star='#E98BB0', ring1='#F2B5CC', ring2='#E5A4C1', accent='#E85D97', accent2='#A66AE8', text='#3B2130', sub='#D94D8E', muted='#9C6B80', track='#F6CFDF'),
+        'hacker': dict(top='#010302', bot='#04180B', star='#39FF88', ring1='#0B5E31', ring2='#168C48', accent='#19E66B', accent2='#59FF9A', text='#D7FFE4', sub='#59FF9A', muted='#6EA77D', track='#0A2414'),
+        'red':    dict(top='#070203', bot='#25080D', star='#FF526A', ring1='#741526', ring2='#9B263E', accent='#F0445E', accent2='#FF7586', text='#FFF1F2', sub='#FF7586', muted='#B9868D', track='#2A0C12'),
+    }
+    STAGES = [(0.00, 'Starting engine'), (0.28, 'Loading math core'), (0.58, 'Preparing interface'), (0.86, 'Almost ready')]
+
     def __init__(self):
         super().__init__()
+        import random
         self.overrideredirect(True)
-        self.configure(bg='#FFF7FB' if core.load_config().get('theme') == 'pink' else '#050817')
-        self.geometry('620x360+420+220')
-        self.splash_pink = core.load_config().get('theme') == 'pink'
-        self.canvas = tk.Canvas(self, bg='#FFF7FB' if self.splash_pink else '#050817', highlightthickness=0)
+        theme = core.load_config().get('theme', 'dark')
+        self.pal = self.PALETTES.get(theme, self.PALETTES['dark'])
+        sw, sh = self.winfo_screenwidth(), self.winfo_screenheight()
+        self.geometry(f'{self.W}x{self.H}+{(sw - self.W) // 2}+{(sh - self.H) // 2}')
+        self.configure(bg=self.pal['top'])
+        try:
+            self.attributes('-topmost', True)
+            self.attributes('-alpha', 0.0)
+        except Exception:
+            pass
+        self.canvas = tk.Canvas(self, width=self.W, height=self.H, bg=self.pal['top'], highlightthickness=0, bd=0)
         self.canvas.pack(fill='both', expand=True)
 
-        self.t = 0
-        self.stars = []
-        for i in range(46):
-            x = (i * 71) % 620
-            y = (i * 43) % 360
-            r = 1 if i % 4 else 2
-            self.stars.append([x, y, r, 0.4 + (i % 5) * 0.15])
-
-        self.logo_size = 12
-        self.alpha_step = 0
-        self.after(40, self.animate)
+        # Static vertical gradient (drawn once).
+        for i in range(0, self.H, 4):
+            self.canvas.create_rectangle(0, i, self.W, i + 4, outline='',
+                                         fill=_lerp_hex(self.pal['top'], self.pal['bot'], i / self.H))
+        rnd = random.Random(7)
+        self.stars = [[rnd.uniform(0, self.W), rnd.uniform(0, self.H), rnd.choice([1, 1, 2]),
+                       rnd.uniform(0.15, 0.6), rnd.uniform(0, 6.28)] for _ in range(60)]
+        self.t0 = time.time()
+        self.last = self.t0
+        self.after(16, self.animate)
 
     def animate(self):
-        self.canvas.delete('all')
-        self.t += 1
+        import math
+        el = time.time() - self.t0
+        dt = el - (self.last - self.t0)
+        self.last = time.time()
+        P = self.pal
+        c = self.canvas
+        c.delete('dyn')
 
-        # Moving star field.
-        for s in self.stars:
-            s[0] -= s[3]
-            if s[0] < -5:
-                s[0] = 625
-            x, y, r, _ = s
-            self.canvas.create_oval(x-r, y-r, x+r, y+r, fill=('#E98BB0' if self.splash_pink else '#7FA9FF'), outline='')
+        # Fade in / out.
+        fade_out_start = self.DURATION - 0.35
+        alpha = min(1.0, el / 0.4)
+        if el > fade_out_start:
+            alpha = max(0.0, 1.0 - (el - fade_out_start) / 0.35)
+        try:
+            self.attributes('-alpha', alpha)
+        except Exception:
+            pass
 
-        # Space glow / pink accent rings.
-        self.canvas.create_oval(130, 45, 490, 405, outline=('#F2B5CC' if self.splash_pink else '#162F75'), width=2)
-        self.canvas.create_oval(185, 100, 435, 350, outline=('#E5A4C1' if self.splash_pink else '#542E8C'), width=2)
-        self.canvas.create_oval(235, 150, 385, 300, outline='#E85D97' if self.t > 8 else '#9A6BFF', width=2)
+        # Drifting stars with twinkle.
+        for st in self.stars:
+            st[0] -= st[3] * 60 * max(dt, 0.001)
+            if st[0] < -4:
+                st[0] = self.W + 4
+            tw = 0.5 + 0.5 * math.sin(el * 3 + st[4])
+            col = _lerp_hex(_lerp_hex(P['top'], P['bot'], st[1] / self.H), P['star'], 0.25 + 0.6 * tw)
+            r = st[2]
+            c.create_oval(st[0] - r, st[1] - r, st[0] + r, st[1] + r, fill=col, outline='', tags='dyn')
 
-        # Logo grows in.
-        size = min(34, 14 + int(self.t * 1.2))
-        self.canvas.create_text(
-            310, 145, text='YVZTOOLS',
-            fill=('#3B2130' if self.splash_pink else '#F4F7FF'), font=('Segoe UI Black', size)
-        )
-        self.canvas.create_text(
-            310, 188, text='NETMATH SPACE',
-            fill=('#D94D8E' if self.splash_pink else '#61D8FF'), font=('Segoe UI Semibold', 13)
-        )
+        # Rotating orbit rings with bright arc segments.
+        cx, cy = self.W / 2, 150
+        for rad, col, sp, w in ((150, P['ring1'], 40, 2), (105, P['ring2'], -70, 2), (62, P['accent'], 120, 2)):
+            c.create_oval(cx - rad, cy - rad, cx + rad, cy + rad, outline=_lerp_hex(P['bot'], col, 0.45), width=1, tags='dyn')
+            c.create_arc(cx - rad, cy - rad, cx + rad, cy + rad, start=(el * sp) % 360, extent=70,
+                         style='arc', outline=col, width=w, tags='dyn')
 
-        # Animated line + status.
-        progress = min(1.0, self.t / 32)
-        self.canvas.create_rectangle(155, 238, 465, 246, outline=('#F0B2CA' if self.splash_pink else '#263C82'), width=1)
-        self.canvas.create_rectangle(155, 238, 155 + 310 * progress, 246, fill=('#E85D97' if self.splash_pink else '#4A9BFF'), outline='')
-        dots = '.' * ((self.t // 7) % 4)
-        self.canvas.create_text(310, 272, text='Initializing YVZTOOLS' + dots,
-                                fill=('#9C6B80' if self.splash_pink else '#91A1CC'), font=('Segoe UI', 9))
+        # Logo + subtitle fade in.
+        a_logo = min(1.0, max(0.0, (el - 0.15) / 0.5))
+        a_sub = min(1.0, max(0.0, (el - 0.55) / 0.5))
+        bgc = _lerp_hex(P['top'], P['bot'], 150 / self.H)
+        size = 30 + int(4 * min(1.0, el / 0.8))
+        c.create_text(cx, cy - 8, text='YVZTOOLS', fill=_lerp_hex(bgc, P['text'], a_logo),
+                      font=('Segoe UI Black', size), tags='dyn')
+        c.create_text(cx, cy + 32, text='NETMATH SPACE', fill=_lerp_hex(bgc, P['sub'], a_sub),
+                      font=('Segoe UI Semibold', 12), tags='dyn')
 
-        if self.t < 42:
-            self.after(35, self.animate)
+        # Smooth eased progress bar with glow.
+        run = max(0.0, min(1.0, el / (self.DURATION - 0.35)))
+        prog = 1 - (1 - run) ** 3
+        x0, x1, y = 130, self.W - 130, 288
+        c.create_line(x0, y, x1, y, width=8, capstyle='round', fill=P['track'], tags='dyn')
+        if prog > 0.01:
+            xe = x0 + (x1 - x0) * prog
+            c.create_line(x0, y, xe, y, width=14, capstyle='round', fill=_lerp_hex(P['track'], P['accent'], 0.25), tags='dyn')
+            c.create_line(x0, y, xe, y, width=8, capstyle='round', fill=P['accent'], tags='dyn')
+            c.create_oval(xe - 4, y - 4, xe + 4, y + 4, fill=P['text'], outline='', tags='dyn')
+
+        # Status text + percent.
+        stage = [t for th, t in self.STAGES if prog >= th][-1]
+        dots = '.' * (int(el * 3) % 4)
+        c.create_text(x0, y + 24, anchor='w', text=stage + dots, fill=P['muted'], font=('Segoe UI', 9), tags='dyn')
+        c.create_text(x1, y + 24, anchor='e', text=f'{int(prog * 100)}%', fill=P['sub'], font=('Segoe UI Semibold', 9), tags='dyn')
+        c.create_text(cx, self.H - 18, text=f'v{VERSION.split()[0]}', fill=P['muted'], font=('Segoe UI', 8), tags='dyn')
+
+        if el < self.DURATION:
+            self.after(16, self.animate)
         else:
             self.destroy()
+
 
 def launch_app():
     cfg = core.load_config()
