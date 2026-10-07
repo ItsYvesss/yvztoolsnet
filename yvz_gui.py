@@ -11,7 +11,7 @@ from tkinter import ttk, messagebox, simpledialog
 from pathlib import Path
 
 APP_NAME = 'YVZTOOLS — NetMath Space'
-VERSION = '3.3 GUI'
+VERSION = '3.4 GUI'
 BASE = Path(__file__).resolve().parent
 CORE_PATH = BASE / 'yvznetmath_core.py'
 
@@ -341,7 +341,7 @@ class App(tk.Tk):
                  font=('Segoe UI Black', 22)).pack(side='left')
         tk.Label(title_row, text='  NETMATH SPACE', bg=BG, fg=BLUE,
                  font=('Segoe UI Semibold', 11)).pack(side='left', pady=(7, 0))
-        tk.Label(title_row, text='V3.3', bg=PANEL2, fg=CYAN,
+        tk.Label(title_row, text='V3.4', bg=PANEL2, fg=CYAN,
                  font=('Segoe UI Semibold', 8), padx=10, pady=4).pack(side='right', pady=5)
         tk.Label(top, text='Desktop control center  •  Chrome + Gemini  •  fast math workflow',
                  bg=BG, fg=MUTED, font=('Segoe UI', 8)).pack(anchor='w', pady=(0, 3))
@@ -473,7 +473,7 @@ class App(tk.Tk):
         self.log.pack(fill='both', expand=True, padx=12, pady=(0, 5))
         self.log.configure(state='disabled')
 
-        self.write_log('V3.0 ready • R Chrome • Y Scan • A Solve • 1-4 Presets • T Theme')
+        self.write_log('V3.4 ready • R Chrome • Y Scan • A Solve • 1-4 Presets • T Theme')
 
     def write_log(self, text):
         self.log.configure(state='normal')
@@ -1096,7 +1096,7 @@ def launch_app():
              font=('Segoe UI Black', 30)).pack(pady=(18, 0))
     tk.Label(content, text='NETMATH SPACE', bg='#050817', fg='#61D8FF',
              font=('Segoe UI Semibold', 11)).pack(pady=(0, 6))
-    tk.Label(content, text='V3.3  •  READY TO LAUNCH', bg='#050817', fg='#91A1CC',
+    tk.Label(content, text='V3.4  •  READY TO LAUNCH', bg='#050817', fg='#91A1CC',
              font=('Segoe UI', 8)).pack(pady=(0, 20))
 
     theme_text = tk.Label(
