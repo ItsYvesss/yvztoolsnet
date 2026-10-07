@@ -145,6 +145,9 @@ class SpaceBackground(tk.Canvas):
         palettes = {
             'dark': ([('#040714',0.0),('#071129',.25),('#0B1433',.52),('#17103A',.78),('#06091C',1.0)], '#77A5FF','#254BA5','#6337A0'),
             'pink': ([('#FFF8FC',0.0),('#FFF1F7',.25),('#FFE8F1',.55),('#FFF7FB',1.0)], '#E88CAF','#F4B8D0','#E5A4C1'),
+            'chocolate': ([('#120A06',0.0),('#1A0D07',.25),('#241108',.55),('#32170A',1.0)], '#E8A36A','#70401F','#A95D2E'),
+            'orange': ([('#160A02',0.0),('#221005',.25),('#321607',.55),('#431F09',1.0)], '#FFB15C','#8C4814','#C55D13'),
+            'purple': ([('#090518',0.0),('#110822',.25),('#190D32',.55),('#241047',1.0)], '#C08CFF','#54309A','#7D4AC2'),
             'hacker': ([('#010302',0.0),('#031008',.3),('#04160A',.62),('#020905',1.0)], '#39FF88','#0B5E31','#168C48'),
             'red': ([('#070203',0.0),('#130407',.3),('#22070B',.62),('#090304',1.0)], '#FF526A','#741526','#9B263E')
         }
@@ -179,7 +182,7 @@ class SpaceBackground(tk.Canvas):
             sx = (self.t * 4) % max(w, 1)
             sy = 100 + (self.t * 2) % max(int(h*.55), 1)
             self.create_line(sx, sy, sx+34, sy+9,
-                             fill={'dark':'#B9D7FF','pink':'#F1A8C5','hacker':'#6DFFAA','red':'#FF8797'}.get(theme, '#B9D7FF'), width=2)
+                             fill={'dark':'#B9D7FF','pink':'#F1A8C5','purple':'#D7B8FF','chocolate':'#F0B27A','orange':'#FFD09A','hacker':'#6DFFAA','red':'#FF8797'}.get(theme, '#B9D7FF'), width=2)
 
 class App(tk.Tk):
     def __init__(self):
