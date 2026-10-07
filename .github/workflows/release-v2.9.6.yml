@@ -1,4 +1,4 @@
-name: Build and Release v3.5
+name: Build and Release v3.6
 
 on:
   push:
@@ -60,7 +60,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = "Stop"
-          $tag = "v3.5"
+          $tag = "v3.6"
 
           gh release view $tag *> $null
           if ($LASTEXITCODE -eq 0) {
@@ -68,7 +68,7 @@ jobs:
             gh release upload $tag YVZNETMATH.exe YVZUPDATER.exe YVZTOOLS-INSTALLER.exe --clobber
           } else {
             Write-Host "Creating release $tag."
-            gh release create $tag YVZNETMATH.exe YVZUPDATER.exe YVZTOOLS-INSTALLER.exe --target main --title "YVZTOOLS v3.5" --generate-notes
+            gh release create $tag YVZNETMATH.exe YVZUPDATER.exe YVZTOOLS-INSTALLER.exe --target main --title "YVZTOOLS v3.6" --generate-notes
           }
 
           gh release view $tag
