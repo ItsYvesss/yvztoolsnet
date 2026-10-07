@@ -1,6 +1,11 @@
 """YVZTOOLS Installer — polished installer for the latest YVZTOOLS build."""
 import os, re, sys, json, time, threading, urllib.request, subprocess
 import tkinter as tk
+import ssl
+try:
+    import certifi
+except ImportError:
+    certifi = None
 from tkinter import filedialog, messagebox
 
 GITHUB_REPO = "ItsYvesss/yvztoolsnet"
@@ -11,9 +16,18 @@ UPDATER_NAME = "YVZUPDATER.exe"
 BG="#040714"; BG2="#0B1233"; TEXT="#F4F7FF"; MUTED="#91A1CC"
 BLUE="#4A9BFF"; GREEN="#4BE3B0"; TRACK="#14204D"
 
+def make_ssl_context():
+    # Use certifi's CA bundle so Windows/PyInstaller builds can verify
+    # GitHub HTTPS certificates reliably.
+    if certifi:
+        return ssl.create_default_context(cafile=certifi.where())
+    return ssl.create_default_context()
+
+SSL_CONTEXT = make_ssl_context()
+
 def get_json(url):
-    req=urllib.request.Request(url, headers={"User-Agent":"YVZTOOLS-Installer/3.5","Accept":"application/vnd.github+json"})
-    with urllib.request.urlopen(req, timeout=20) as r:
+    req=urllib.request.Request(url, headers={"User-Agent":"YVZTOOLS-Installer/3.6","Accept":"application/vnd.github+json"})
+    with urllib.request.urlopen(req, timeout=20, context=SSL_CONTEXT) as r:
         return json.load(r)
 
 class Installer(tk.Tk):
@@ -21,6 +35,7 @@ class Installer(tk.Tk):
     def __init__(self):
         super().__init__()
         self.overrideredirect(True)
+        self.closing = False
         self.configure(bg=BG)
         sw,sh=self.winfo_screenwidth(),self.winfo_screenheight()
         self.geometry(f"{self.W}x{self.H}+{(sw-self.W)//2}+{(sh-self.H)//2}")
@@ -33,6 +48,12 @@ class Installer(tk.Tk):
         self.t0=time.time()
         self.after(16,self.draw)
 
+    def close(self):
+        if self.closing:
+            return
+        self.closing = True
+        self.destroy()
+
     def choose(self):
         p=filedialog.askdirectory(title="Choose YVZTOOLS installation folder",
                                   initialdir=os.path.dirname(self.folder))
@@ -40,6 +61,8 @@ class Installer(tk.Tk):
             self.folder=p if os.path.basename(p).upper()=="YVZTOOLS" else os.path.join(p,"YVZTOOLS")
 
     def install(self):
+        if self.closing:
+            return
         self.state="download"; self.msg="Preparing YVZTOOLS"; self.sub=f"Installing to {self.folder}"; self.pct=0
         threading.Thread(target=self.run,daemon=True).start()
 
@@ -65,8 +88,8 @@ class Installer(tk.Tk):
                 url=assets[name]["browser_download_url"]
                 dest=os.path.join(self.folder,name)
                 self.ui(f"Downloading {name}",f"YVZTOOLS {tag} • {self.folder}")
-                req=urllib.request.Request(url,headers={"User-Agent":"YVZTOOLS-Installer/3.5"})
-                with urllib.request.urlopen(req,timeout=60) as r, open(dest,"wb") as f:
+                req=urllib.request.Request(url,headers={"User-Agent":"YVZTOOLS-Installer/3.6"})
+                with urllib.request.urlopen(req,timeout=60,context=SSL_CONTEXT) as r, open(dest,"wb") as f:
                     total=int(r.headers.get("Content-Length") or 0); done=0
                     while True:
                         chunk=r.read(256*1024)
@@ -93,6 +116,10 @@ class Installer(tk.Tk):
     def fail(self):
         messagebox.showerror("YVZTOOLS Installer",self.msg+"\n\n"+self.sub)
 
+    def _set_close_hover(self, value):
+        self._close_hover = value
+        self.draw()
+
     def draw(self):
         c=self.c; now=time.time(); el=now-self.t0; c.delete("all")
         for y in range(0,self.H,5):
@@ -106,9 +133,19 @@ class Installer(tk.Tk):
             x=(i*137+el*18)%self.W; y=(i*83)%self.H
             c.create_oval(x,y,x+2,y+2,fill="#1A3A72",outline="")
         c.create_rectangle(0,0,self.W,self.H,outline="#20356F")
+        # Custom close button because the installer uses a borderless window.
+        close_hover = getattr(self, "_close_hover", False)
+        c.create_rectangle(self.W-62, 22, self.W-24, 60,
+                           fill="#18264F" if close_hover else "#101A3A",
+                           outline="#4A6DBA", tags="close")
+        c.create_text(self.W-43, 41, text="×", fill=TEXT,
+                      font=("Segoe UI", 18), tags="close")
+        c.tag_bind("close", "<Enter>", lambda e: self._set_close_hover(True))
+        c.tag_bind("close", "<Leave>", lambda e: self._set_close_hover(False))
+        c.tag_bind("close", "<Button-1>", lambda e: self.close())
         c.create_rectangle(0,0,self.W,4,fill=BLUE,outline="")
         c.create_text(48,54,anchor="w",text="YVZTOOLS",fill=TEXT,font=("Segoe UI Black",30))
-        c.create_text(50,84,anchor="w",text="INSTALLER  •  V3.5",fill=BLUE,font=("Segoe UI Semibold",10))
+        c.create_text(50,84,anchor="w",text="INSTALLER  •  V3.6",fill=BLUE,font=("Segoe UI Semibold",10))
         c.create_text(48,136,anchor="w",text=self.msg,fill=TEXT,font=("Segoe UI Semibold",17))
         c.create_text(48,165,anchor="w",text=self.sub,fill=MUTED,font=("Segoe UI",9))
         c.create_text(48,211,anchor="w",text="INSTALL LOCATION",fill=MUTED,font=("Segoe UI Semibold",8))
@@ -131,4 +168,6 @@ class Installer(tk.Tk):
         self.after(16,self.draw)
 
 if __name__=="__main__":
-    Installer().mainloop()
+    app=Installer()
+    app.bind("<Escape>", lambda e: app.close())
+    app.mainloop()
