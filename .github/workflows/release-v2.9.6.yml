@@ -54,7 +54,7 @@ jobs:
           if (-not (Test-Path -LiteralPath "YVZTOOLS-INSTALLER.exe")) { throw "YVZTOOLS-INSTALLER.exe was not created." }
           Get-Item -LiteralPath "YVZNETMATH.exe","YVZUPDATER.exe","YVZTOOLS-INSTALLER.exe" | ForEach-Object { Write-Host "Built $($_.Name) - $($_.Length) bytes" }
 
-      - name: Publish v3.4 release
+      - name: Publish v3.6 release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
