@@ -11,7 +11,7 @@ from tkinter import ttk, messagebox, simpledialog
 from pathlib import Path
 
 APP_NAME = 'YVZTOOLS — NetMath Space'
-VERSION = '3.0 GUI'
+VERSION = '3.1 GUI'
 BASE = Path(__file__).resolve().parent
 CORE_PATH = BASE / 'yvznetmath_core.py'
 
@@ -224,6 +224,21 @@ class App(tk.Tk):
                 'label':'🔥 CRIMSON', 'BG':'#090304','PANEL':'#190608','PANEL2':'#260A0E',
                 'TEXT':'#FFF1F2','MUTED':'#B9868D','ACCENT':'#F0445E',
                 'PURPLE':'#C83EAA','CYAN':'#FF7586','GREEN':'#58D89A','BORDER':'#6F1826'
+            },
+            'purple': {
+                'label':'💜 NEON PURPLE', 'BG':'#090518','PANEL':'#120A2B','PANEL2':'#1B1040',
+                'TEXT':'#F4EEFF','MUTED':'#A99AC7','ACCENT':'#A66BFF',
+                'PURPLE':'#C08CFF','CYAN':'#7EDCFF','GREEN':'#65E6B5','BORDER':'#54309A'
+            },
+            'chocolate': {
+                'label':'🍫 CHOCOLATE', 'BG':'#120A06','PANEL':'#21120B','PANEL2':'#321B10',
+                'TEXT':'#FFF3E8','MUTED':'#B99A86','ACCENT':'#C9793D',
+                'PURPLE':'#B46AE8','CYAN':'#E4B07A','GREEN':'#8ED49A','BORDER':'#70401F'
+            },
+            'orange': {
+                'label':'🍊 SOLAR ORANGE', 'BG':'#160A02','PANEL':'#261306','PANEL2':'#3A1D08',
+                'TEXT':'#FFF5E8','MUTED':'#C7A27E','ACCENT':'#FF8A2B',
+                'PURPLE':'#C77CFF','CYAN':'#67DFFF','GREEN':'#72E0A8','BORDER':'#8C4814'
             }
         }
         self._apply_theme_constants()
@@ -248,7 +263,7 @@ class App(tk.Tk):
         # Theme selector shown from the main control deck.
         win = tk.Toplevel(self)
         win.title('YVZTOOLS • Choose Theme')
-        win.geometry('430x330')
+        win.geometry('520x500')
         win.resizable(False, False)
         win.configure(bg=BG)
         try:
@@ -276,7 +291,7 @@ class App(tk.Tk):
             self._build_ui()
             self.refresh_status()
 
-        for name in ('dark', 'pink', 'hacker', 'red'):
+        for name in ('dark', 'pink', 'purple', 'chocolate', 'orange', 'hacker', 'red'):
             t = self.themes[name]
             card = tk.Frame(win, bg=t['PANEL'], highlightthickness=1,
                             highlightbackground=t['BORDER'])
