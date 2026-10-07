@@ -11,7 +11,7 @@ from tkinter import ttk, messagebox, simpledialog
 from pathlib import Path
 
 APP_NAME = 'YVZTOOLS — NetMath Space'
-VERSION = '3.4 GUI'
+VERSION = '3.6 GUI'
 BASE = Path(__file__).resolve().parent
 CORE_PATH = BASE / 'yvznetmath_core.py'
 
@@ -85,6 +85,7 @@ class RoundedButton(tk.Canvas):
         self.create_rectangle(0, r+yoff, w, h-r-yoff, fill=fill, outline='')
         for x, y in ((r, r+yoff), (w-r, r+yoff), (r, h-r-yoff), (w-r, h-r-yoff)):
             self.create_oval(x-r, y-r, x+r, y+r, fill=fill, outline='')
+        self.create_rectangle(r+2, yoff+2, w-r-2, h-yoff-2, outline=BLUE if self._hover and self.enabled else '', width=1)
         self.create_text(w/2, h/2+yoff, text=self.text,
                          fill=self.fg if self.enabled else MUTED,
                          font=('Segoe UI Semibold', 9))
@@ -275,9 +276,9 @@ class App(tk.Tk):
         except Exception:
             pass
 
-        tk.Label(win, text='CHOOSE YOUR YVZTOOLS THEME',
+        tk.Label(win, text='YVZTOOLS THEME STUDIO',
                  bg=BG, fg=TEXT, font=('Segoe UI Black', 15)).pack(pady=(20, 4))
-        tk.Label(win, text='Pick a style for the entire control deck',
+        tk.Label(win, text='Pick a visual style for your entire control center',
                  bg=BG, fg=MUTED, font=('Segoe UI', 9)).pack(pady=(0, 14))
 
         def choose(name):
@@ -341,9 +342,9 @@ class App(tk.Tk):
                  font=('Segoe UI Black', 22)).pack(side='left')
         tk.Label(title_row, text='  NETMATH SPACE', bg=BG, fg=BLUE,
                  font=('Segoe UI Semibold', 11)).pack(side='left', pady=(7, 0))
-        tk.Label(title_row, text='V3.4', bg=PANEL2, fg=CYAN,
+        tk.Label(title_row, text='V3.6', bg=PANEL2, fg=CYAN,
                  font=('Segoe UI Semibold', 8), padx=10, pady=4).pack(side='right', pady=5)
-        tk.Label(top, text='Desktop control center  •  Chrome + Gemini  •  fast math workflow',
+        tk.Label(top, text='Smart homework control center  •  Chrome + Gemini  •  scan → solve',
                  bg=BG, fg=MUTED, font=('Segoe UI', 8)).pack(anchor='w', pady=(0, 3))
 
         # Main two-column layout
@@ -354,36 +355,36 @@ class App(tk.Tk):
         right.grid(row=1, column=1, sticky='nsew', padx=(8, 26), pady=(0, 20))
 
         # Left: control deck
-        tk.Label(left, text='CONTROL DECK', bg=PANEL, fg=TEXT,
+        tk.Label(left, text='COMMAND CENTER', bg=PANEL, fg=TEXT,
                  font=('Segoe UI Semibold', 10)).pack(anchor='w', padx=16, pady=(14, 2))
-        tk.Label(left, text='Quick actions', bg=PANEL, fg=MUTED,
+        tk.Label(left, text='Fast workflow • one click per step', bg=PANEL, fg=MUTED,
                  font=('Segoe UI', 8)).pack(anchor='w', padx=16, pady=(0, 10))
 
-        self.btn_r = RoundedButton(left, 'R   START CHROME', self.start_chrome, BLUE, CYAN, height=42)
+        self.btn_r = RoundedButton(left, '①  START CHROME', self.start_chrome, BLUE, CYAN, height=42)
         self.btn_r.pack(fill='x', padx=14, pady=4)
-        self.btn_y = RoundedButton(left, 'Y   SCAN QUESTION', self.scan, PANEL2, BLUE, TEXT, height=42)
+        self.btn_y = RoundedButton(left, '②  SCAN QUESTION', self.scan, PANEL2, BLUE, TEXT, height=42)
         self.btn_y.pack(fill='x', padx=14, pady=4)
-        self.btn_a = RoundedButton(left, 'A   SOLVE QUESTION', self.solve, PURPLE, CYAN, height=42)
+        self.btn_a = RoundedButton(left, '③  SOLVE WITH GEMINI', self.solve, PURPLE, CYAN, height=42)
         self.btn_a.pack(fill='x', padx=14, pady=4)
 
         # Compact status card
         status = tk.Frame(left, bg=PANEL2, highlightbackground=border, highlightthickness=1)
         status.pack(fill='x', padx=14, pady=(15, 8))
-        tk.Label(status, text='SYSTEM STATUS', bg=PANEL2, fg=CYAN,
+        tk.Label(status, text='CONNECTION STATUS', bg=PANEL2, fg=CYAN,
                  font=('Segoe UI Semibold', 8)).pack(anchor='w', padx=12, pady=(10, 5))
-        self.status_debug = tk.Label(status, text='Chrome debug: checking…', bg=PANEL2, fg=MUTED,
+        self.status_debug = tk.Label(status, text='Chrome connection: checking…', bg=PANEL2, fg=MUTED,
                                       font=('Segoe UI', 8), anchor='w')
         self.status_debug.pack(fill='x', padx=12, pady=2)
-        self.status_scan = tk.Label(status, text='Last scan: none', bg=PANEL2, fg=MUTED,
+        self.status_scan = tk.Label(status, text='Question scan: none yet', bg=PANEL2, fg=MUTED,
                                      font=('Segoe UI', 8), anchor='w')
         self.status_scan.pack(fill='x', padx=12, pady=(2, 10))
 
-        self.btn_theme = RoundedButton(left, 'T   CHANGE THEME', self.toggle_theme, PANEL2, PURPLE, TEXT, height=38)
+        self.btn_theme = RoundedButton(left, '✦  CHANGE THEME', self.toggle_theme, PANEL2, PURPLE, TEXT, height=38)
         self.btn_theme.pack(fill='x', padx=14, pady=4)
-        self.btn_x = RoundedButton(left, 'X   EXIT', self.on_exit, PANEL2, BLUE, TEXT, height=38)
+        self.btn_x = RoundedButton(left, '×  EXIT YVZTOOLS', self.on_exit, PANEL2, BLUE, TEXT, height=38)
         self.btn_x.pack(fill='x', padx=14, pady=4)
 
-        tk.Label(left, text='KEYBOARD', bg=PANEL, fg=MUTED,
+        tk.Label(left, text='SHORTCUTS', bg=PANEL, fg=MUTED,
                  font=('Segoe UI Semibold', 8)).pack(anchor='w', padx=16, pady=(15, 4))
         keys = tk.Frame(left, bg=PANEL)
         keys.pack(fill='x', padx=14)
@@ -409,12 +410,12 @@ class App(tk.Tk):
         # Right: live workspace
         header = tk.Frame(right, bg=PANEL)
         header.pack(fill='x', padx=16, pady=(13, 0))
-        tk.Label(header, text='LIVE QUESTION FEED', bg=PANEL, fg=TEXT,
+        tk.Label(header, text='QUESTION WORKSPACE', bg=PANEL, fg=TEXT,
                  font=('Segoe UI Semibold', 11)).pack(side='left')
-        self.live_dot = tk.Label(header, text='● LIVE', bg=PANEL, fg=GREEN,
+        self.live_dot = tk.Label(header, text='● READY', bg=PANEL, fg=GREEN,
                                  font=('Segoe UI Semibold', 8))
         self.live_dot.pack(side='right')
-        self.page_label = tk.Label(right, text='Waiting for a Netmath / NetFrancais question…',
+        self.page_label = tk.Label(right, text='Waiting for a Netmath / NetFrancais question — start Chrome, then scan.',
                                    bg=PANEL, fg=MUTED, font=('Segoe UI', 8), anchor='w')
         self.page_label.pack(fill='x', padx=16, pady=(2, 9))
 
@@ -1123,9 +1124,9 @@ def launch_app():
         win.transient(picker)
         win.grab_set()
 
-        tk.Label(win, text='SELECT THEME', bg='#050817', fg='#F4F7FF',
+        tk.Label(win, text='CHOOSE YOUR STYLE', bg='#050817', fg='#F4F7FF',
                  font=('Segoe UI Black', 17)).pack(pady=(22, 3))
-        tk.Label(win, text='Choose how YVZTOOLS looks before entering the app.',
+        tk.Label(win, text='Personalize your control center before you launch.',
                  bg='#050817', fg='#91A1CC', font=('Segoe UI', 8)).pack(pady=(0, 15))
 
         grid = tk.Frame(win, bg='#050817')
@@ -1177,14 +1178,14 @@ def launch_app():
     ).pack(fill='x', padx=42, pady=5)
 
     tk.Button(
-        content, text='SELECT THEME  ✦', command=select_theme,
+        content, text='CHOOSE YOUR STYLE  ✦', command=select_theme,
         bg='#121A3F', fg='#F4F7FF', activebackground='#A66BFF',
         activeforeground='white', relief='flat', bd=0,
         font=('Segoe UI Semibold', 10), cursor='hand2',
         padx=28, pady=10
     ).pack(fill='x', padx=42, pady=5)
 
-    tk.Label(content, text='Your theme is saved for the next launch.',
+    tk.Label(content, text='Theme is saved automatically for your next launch.',
              bg='#050817', fg='#91A1CC', font=('Segoe UI', 8)).pack(pady=(13, 0))
 
     picker.mainloop()
