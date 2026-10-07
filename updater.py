@@ -34,7 +34,7 @@ def http_json(url):
 
 
 class Updater(tk.Tk):
-    W, H = 480, 250
+    W, H = 560, 320
 
     def __init__(self):
         super().__init__()
@@ -67,11 +67,11 @@ class Updater(tk.Tk):
         c.create_rectangle(0, 0, self.W, 3, outline="", fill=self.state_col)
         c.create_rectangle(0, 0, self.W, self.H, outline="#1B2A63", width=1)
 
-        c.create_text(28, 38, anchor="w", text="YVZTOOLS", fill=TEXT, font=("Segoe UI Black", 18))
-        c.create_text(135, 41, anchor="w", text="UPDATER", fill=ACCENT, font=("Segoe UI Semibold", 10))
+        c.create_text(52, 35, anchor="w", text="YVZTOOLS", fill=TEXT, font=("Segoe UI Black", 20))
+        c.create_text(52, 59, anchor="w", text="NETMATH  •  SMART UPDATER", fill=ACCENT, font=("Segoe UI Semibold", 9))
 
         # spinner
-        cx, cy = self.W - 44, 40
+        cx, cy = self.W - 48, 44
         c.create_oval(cx - 14, cy - 14, cx + 14, cy + 14, outline=TRACK, width=3)
         if self.pct is None or self.pct < 1:
             c.create_arc(cx - 14, cy - 14, cx + 14, cy + 14, start=(el * 280) % 360, extent=90,
@@ -79,10 +79,10 @@ class Updater(tk.Tk):
         else:
             c.create_arc(cx - 14, cy - 14, cx + 14, cy + 14, start=0, extent=359, style="arc", outline=self.state_col, width=3)
 
-        c.create_text(28, 104, anchor="w", text=self.title_txt, fill=TEXT, font=("Segoe UI Semibold", 15))
-        c.create_text(28, 132, anchor="w", text=self.sub_txt, fill=MUTED, font=("Segoe UI", 9))
+        c.create_text(40, 104, anchor="w", text=self.title_txt, fill=TEXT, font=("Segoe UI Semibold", 15))
+        c.create_text(40, 132, anchor="w", text=self.sub_txt, fill=MUTED, font=("Segoe UI", 9))
 
-        x0, x1, y = 28, self.W - 28, 184
+        x0, x1, y = 40, self.W - 40, 220
         c.create_line(x0, y, x1, y, width=8, capstyle="round", fill=TRACK)
         if self.pct is None:
             span = (x1 - x0) * 0.28
