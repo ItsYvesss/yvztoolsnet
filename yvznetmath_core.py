@@ -76,7 +76,7 @@ CONFIG_PATH = os.path.join(APP_DATA_DIR, "config.json")
 
 # Flash-Lite is Google's fastest/lowest-latency tier - built specifically
 # for exactly this kind of quick, low-complexity Q&A workload.
-GEMINI_MODEL = "gemini-flash-lite-latest"
+GEMINI_MODEL = "gemini-3.5-flash-lite"
 GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 
 SITE_HINTS = ["netmath", "netfrancais"]  # matched against tab URL / title, case-insensitive
@@ -86,7 +86,7 @@ SITE_HINTS = ["netmath", "netfrancais"]  # matched against tab URL / title, case
 # sibling instruction headings are now handled), and solve_question
 # was overhauled with the screenshot-capture feature and the 1-4
 # preset menu (Gemini-only, Anthropic/Claude removed as an option).
-TOOL_VERSION = "2.1"
+TOOL_VERSION = "2.2"
 
 
 # --------------------------------------------------------------------------- #
