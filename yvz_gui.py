@@ -11,7 +11,7 @@ from tkinter import ttk, messagebox, simpledialog
 from pathlib import Path
 
 APP_NAME = 'YVZTOOLS — NetMath Space'
-VERSION = '3.2 GUI'
+VERSION = '3.3 GUI'
 BASE = Path(__file__).resolve().parent
 CORE_PATH = BASE / 'yvznetmath_core.py'
 
@@ -341,7 +341,7 @@ class App(tk.Tk):
                  font=('Segoe UI Black', 22)).pack(side='left')
         tk.Label(title_row, text='  NETMATH SPACE', bg=BG, fg=BLUE,
                  font=('Segoe UI Semibold', 11)).pack(side='left', pady=(7, 0))
-        tk.Label(title_row, text='V3.0', bg=PANEL2, fg=CYAN,
+        tk.Label(title_row, text='V3.3', bg=PANEL2, fg=CYAN,
                  font=('Segoe UI Semibold', 8), padx=10, pady=4).pack(side='right', pady=5)
         tk.Label(top, text='Desktop control center  •  Chrome + Gemini  •  fast math workflow',
                  bg=BG, fg=MUTED, font=('Segoe UI', 8)).pack(anchor='w', pady=(0, 3))
@@ -1048,60 +1048,144 @@ class YVZSplash(tk.Tk):
 def launch_app():
     cfg = core.load_config()
     saved = cfg.get('theme', 'dark')
+
     themes = {
-        'dark': ('🌌', 'SPACE BLUE', '#4A9BFF'),
-        'pink': ('🌸', 'COTTON CANDY', '#E85D97'),
-        'hacker': ('☠', 'HACKER GREEN', '#19E66B'),
-        'red': ('🔥', 'CRIMSON', '#F0445E')
+        'dark': ('🌌', 'SPACE BLUE', '#4A9BFF', '#050817', '#0B1230'),
+        'pink': ('🌸', 'COTTON CANDY', '#E85D97', '#FFF7FB', '#FFF0F6'),
+        'purple': ('💜', 'NEON PURPLE', '#A66BFF', '#090518', '#120A2B'),
+        'chocolate': ('🍫', 'CHOCOLATE', '#C9793D', '#2B0F05', '#4A1F0A'),
+        'orange': ('🍊', 'SOLAR ORANGE', '#FF8A2B', '#160A02', '#261306'),
+        'hacker': ('☠', 'HACKER GREEN', '#19E66B', '#020604', '#06110A'),
+        'red': ('🔥', 'CRIMSON', '#F0445E', '#090304', '#190608')
     }
 
+    selected = {'name': saved if saved in themes else 'dark'}
+
     picker = tk.Tk()
-    picker.title('YVZTOOLS • Select Theme')
+    picker.title('YVZTOOLS • Welcome')
     picker.geometry('650x470')
     picker.resizable(False, False)
     picker.configure(bg='#050817')
-    selected = {'name': saved if saved in themes else 'dark'}
 
-    tk.Label(picker, text='YVZTOOLS', bg='#050817', fg='#F4F7FF',
-             font=('Segoe UI Black', 28)).pack(pady=(28, 0))
-    tk.Label(picker, text='NETMATH SPACE  •  CHOOSE YOUR THEME',
-             bg='#050817', fg='#61D8FF', font=('Segoe UI Semibold', 10)).pack(pady=(0, 22))
+    # Subtle animated glow behind the welcome screen.
+    canvas = tk.Canvas(picker, bg='#050817', highlightthickness=0, bd=0)
+    canvas.place(relx=0, rely=0, relwidth=1, relheight=1)
 
-    grid = tk.Frame(picker, bg='#050817')
-    grid.pack(fill='both', expand=True, padx=34)
+    def animate_welcome(t=[0]):
+        import math
+        if not picker.winfo_exists():
+            return
+        canvas.delete('glow')
+        w, h = picker.winfo_width(), picker.winfo_height()
+        pulse = (math.sin(t[0] * 0.045) + 1) / 2
+        for i, (x, y, r, col) in enumerate([
+            (110, 110, 90 + pulse * 25, '#163A78'),
+            (540, 330, 120 + pulse * 30, '#24145C'),
+            (325, 470, 100 + pulse * 20, '#123E58')
+        ]):
+            canvas.create_oval(x-r, y-r, x+r, y+r, outline=col, width=2, tags='glow')
+        t[0] += 1
+        picker.after(40, animate_welcome)
 
-    def choose(name):
-        selected['name'] = name
-        for child in grid.winfo_children():
-            child.configure(relief='solid' if getattr(child, '_theme_name', None) == name else 'flat')
+    animate_welcome()
 
-    for i, (name, (icon, label, accent)) in enumerate(themes.items()):
-        card = tk.Frame(grid, bg='#0B1230', highlightthickness=1,
-                        highlightbackground='#263C82', cursor='hand2')
-        card._theme_name = name
-        card.grid(row=i//2, column=i%2, padx=9, pady=9, sticky='nsew', ipadx=8, ipady=12)
-        grid.grid_columnconfigure(i%2, weight=1)
+    content = tk.Frame(picker, bg='#050817')
+    content.place(relx=0.5, rely=0.5, anchor='center', relwidth=0.88, relheight=0.88)
 
-        tk.Label(card, text=icon, bg='#0B1230', fg=accent,
-                 font=('Segoe UI Emoji', 22)).pack(pady=(6,0))
-        tk.Label(card, text=label, bg='#0B1230', fg='#F2F6FF',
-                 font=('Segoe UI Semibold', 10)).pack(pady=5)
+    tk.Label(content, text='YVZTOOLS', bg='#050817', fg='#F4F7FF',
+             font=('Segoe UI Black', 30)).pack(pady=(18, 0))
+    tk.Label(content, text='NETMATH SPACE', bg='#050817', fg='#61D8FF',
+             font=('Segoe UI Semibold', 11)).pack(pady=(0, 6))
+    tk.Label(content, text='V3.3  •  READY TO LAUNCH', bg='#050817', fg='#91A1CC',
+             font=('Segoe UI', 8)).pack(pady=(0, 20))
 
-        for widget in (card, *card.winfo_children()):
-            widget.bind('<Button-1>', lambda e, x=name: choose(x))
+    theme_text = tk.Label(
+        content,
+        text='',
+        bg='#0B1230',
+        fg='#F4F7FF',
+        font=('Segoe UI Semibold', 10),
+        padx=12,
+        pady=10
+    )
+    theme_text.pack(fill='x', padx=42, pady=(0, 18))
 
-    tk.Label(picker, text='Your choice is saved for next launch.',
-             bg='#050817', fg='#91A1CC', font=('Segoe UI', 8)).pack(pady=(3, 5))
+    def update_theme_text():
+        icon, label, accent, _, _ = themes[selected['name']]
+        theme_text.config(text=f'{icon}  {label}  •  SELECTED THEME', fg=accent)
 
-    def launch():
+    def select_theme():
+        win = tk.Toplevel(picker)
+        win.title('YVZTOOLS • Select Theme')
+        win.geometry('570x520')
+        win.resizable(False, False)
+        win.configure(bg='#050817')
+        win.transient(picker)
+        win.grab_set()
+
+        tk.Label(win, text='SELECT THEME', bg='#050817', fg='#F4F7FF',
+                 font=('Segoe UI Black', 17)).pack(pady=(22, 3))
+        tk.Label(win, text='Choose how YVZTOOLS looks before entering the app.',
+                 bg='#050817', fg='#91A1CC', font=('Segoe UI', 8)).pack(pady=(0, 15))
+
+        grid = tk.Frame(win, bg='#050817')
+        grid.pack(fill='both', expand=True, padx=30)
+
+        for i, (name, (icon, label, accent, card_bg, panel_bg)) in enumerate(themes.items()):
+            card = tk.Frame(
+                grid, bg=panel_bg, highlightthickness=2 if name == selected['name'] else 1,
+                highlightbackground=accent if name == selected['name'] else '#263C82',
+                cursor='hand2'
+            )
+            card.grid(row=i//2, column=i%2, padx=7, pady=7, sticky='nsew', ipadx=8, ipady=8)
+
+            tk.Label(card, text=icon, bg=panel_bg, fg=accent,
+                     font=('Segoe UI Emoji', 19)).pack(pady=(3, 0))
+            tk.Label(card, text=label, bg=panel_bg, fg='#F4F7FF',
+                     font=('Segoe UI Semibold', 9)).pack(pady=4)
+
+            def choose(name=name):
+                selected['name'] = name
+                update_theme_text()
+                win.destroy()
+                # Reopen selection state is not needed; the chosen theme is shown on welcome.
+            for widget in (card, *card.winfo_children()):
+                widget.bind('<Button-1>', lambda e, x=name: choose(x))
+
+        for col in range(2):
+            grid.grid_columnconfigure(col, weight=1)
+
+        tk.Button(win, text='DONE', command=win.destroy,
+                  bg='#14204D', fg='#F4F7FF', activebackground='#263C82',
+                  activeforeground='white', relief='flat', bd=0,
+                  font=('Segoe UI Semibold', 9), cursor='hand2',
+                  padx=22, pady=8).pack(pady=(10, 20))
+
+    def enter():
         cfg['theme'] = selected['name']
         core.save_config(cfg)
         picker.destroy()
 
-    tk.Button(picker, text='ENTER YVZTOOLS  →', command=launch,
-              bg='#4A9BFF', fg='white', activebackground='#61D8FF',
-              relief='flat', bd=0, font=('Segoe UI Semibold', 10),
-              cursor='hand2', padx=25, pady=9).pack(pady=(4, 20))
+    update_theme_text()
+
+    # Exactly two primary startup actions.
+    tk.Button(
+        content, text='ENTER YVZTOOLS  →', command=enter,
+        bg='#4A9BFF', fg='white', activebackground='#61D8FF',
+        relief='flat', bd=0, font=('Segoe UI Semibold', 11),
+        cursor='hand2', padx=28, pady=11
+    ).pack(fill='x', padx=42, pady=5)
+
+    tk.Button(
+        content, text='SELECT THEME  ✦', command=select_theme,
+        bg='#121A3F', fg='#F4F7FF', activebackground='#A66BFF',
+        activeforeground='white', relief='flat', bd=0,
+        font=('Segoe UI Semibold', 10), cursor='hand2',
+        padx=28, pady=10
+    ).pack(fill='x', padx=42, pady=5)
+
+    tk.Label(content, text='Your theme is saved for the next launch.',
+             bg='#050817', fg='#91A1CC', font=('Segoe UI', 8)).pack(pady=(13, 0))
 
     picker.mainloop()
 
