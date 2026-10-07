@@ -150,7 +150,8 @@ class SpaceBackground(tk.Canvas):
             'orange': ([('#160A02',0.0),('#221005',.25),('#321607',.55),('#431F09',1.0)], '#FFB15C','#8C4814','#C55D13'),
             'purple': ([('#090518',0.0),('#110822',.25),('#190D32',.55),('#241047',1.0)], '#C08CFF','#54309A','#7D4AC2'),
             'hacker': ([('#010302',0.0),('#031008',.3),('#04160A',.62),('#020905',1.0)], '#39FF88','#0B5E31','#168C48'),
-            'red': ([('#070203',0.0),('#130407',.3),('#22070B',.62),('#090304',1.0)], '#FF526A','#741526','#9B263E')
+            'red': ([('#070203',0.0),('#130407',.3),('#22070B',.62),('#090304',1.0)], '#FF526A','#741526','#9B263E'),
+            'yvl': ([('#050505',0.0),('#111111',.3),('#202020',.62),('#080808',1.0)], '#FFFFFF','#666666','#AAAAAA')
         }
         bands, star, arc1, arc2 = palettes.get(theme, palettes['dark'])
 
@@ -243,6 +244,11 @@ class App(tk.Tk):
                 'label':'🍊 SOLAR ORANGE', 'BG':'#160A02','PANEL':'#261306','PANEL2':'#3A1D08',
                 'TEXT':'#FFF5E8','MUTED':'#C7A27E','ACCENT':'#FF8A2B',
                 'PURPLE':'#C77CFF','CYAN':'#67DFFF','GREEN':'#72E0A8','BORDER':'#8C4814'
+            },
+            'yvl': {
+                'label':'◼ YVL', 'BG':'#050505','PANEL':'#111111','PANEL2':'#202020',
+                'TEXT':'#FFFFFF','MUTED':'#AAAAAA','ACCENT':'#FFFFFF',
+                'PURPLE':'#CCCCCC','CYAN':'#E6E6E6','GREEN':'#BFBFBF','BORDER':'#444444'
             }
         }
         self._apply_theme_constants()
@@ -295,7 +301,7 @@ class App(tk.Tk):
             self._build_ui()
             self.refresh_status()
 
-        for name in ('dark', 'pink', 'purple', 'chocolate', 'orange', 'hacker', 'red'):
+        for name in ('dark', 'pink', 'purple', 'chocolate', 'orange', 'hacker', 'red', 'yvl'):
             t = self.themes[name]
             card = tk.Frame(win, bg=t['PANEL'], highlightthickness=1,
                             highlightbackground=t['BORDER'])
@@ -1057,7 +1063,8 @@ def launch_app():
         'chocolate': ('🍫', 'CHOCOLATE', '#C9793D', '#2B0F05', '#4A1F0A'),
         'orange': ('🍊', 'SOLAR ORANGE', '#FF8A2B', '#160A02', '#261306'),
         'hacker': ('☠', 'HACKER GREEN', '#19E66B', '#020604', '#06110A'),
-        'red': ('🔥', 'CRIMSON', '#F0445E', '#090304', '#190608')
+        'red': ('🔥', 'CRIMSON', '#F0445E', '#090304', '#190608'),
+        'yvl': ('◼', 'YVL', '#FFFFFF', '#050505', '#111111')
     }
 
     selected = {'name': saved if saved in themes else 'dark'}
