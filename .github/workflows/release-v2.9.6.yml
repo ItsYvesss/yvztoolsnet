@@ -30,7 +30,7 @@ jobs:
           if exist build rmdir /s /q build
           if exist dist rmdir /s /q dist
           if exist YVZNETMATH.exe del /q YVZNETMATH.exe
-          py -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZNETMATH --distpath . --icon "yvztools.ico" --add-data "yvznetmath_core.py;." --add-data "yvztools.ico;." --hidden-import websocket --hidden-import websocket._abnf --hidden-import websocket._core --hidden-import websocket._exceptions --hidden-import websocket._handshake --hidden-import websocket._http --hidden-import websocket._logging --hidden-import websocket._socket --hidden-import websocket._ssl_compat --hidden-import websocket._url --hidden-import websocket._utils --collect-submodules websocket yvz_gui.py
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZNETMATH --distpath . --icon "yvztools.ico" --add-data "yvznetmath_core.py;." --add-data "yvztools.ico;." --hidden-import websocket --hidden-import websocket._abnf --hidden-import websocket._core --hidden-import websocket._exceptions --hidden-import websocket._handshake --hidden-import websocket._http --hidden-import websocket._logging --hidden-import websocket._socket --hidden-import websocket._ssl_compat --hidden-import websocket._url --hidden-import websocket._utils --collect-submodules websocket yvz_gui.py
 
       - name: Verify executable
         shell: pwsh
