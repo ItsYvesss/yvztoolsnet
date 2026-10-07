@@ -1,4 +1,4 @@
-name: Build and Release v3.3
+name: Build and Release v3.4
 
 on:
   push:
@@ -32,30 +32,36 @@ jobs:
           if exist YVZNETMATH.exe del /q YVZNETMATH.exe
           python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZNETMATH --distpath . --icon "yvztools.ico" --add-data "yvznetmath_core.py;." --add-data "yvztools.ico;." --hidden-import requests --hidden-import requests.adapters --hidden-import requests.api --hidden-import requests.auth --hidden-import requests.cookies --hidden-import requests.exceptions --hidden-import requests.models --hidden-import requests.sessions --hidden-import requests.status_codes --hidden-import requests.structures --hidden-import requests.utils --hidden-import urllib3 --hidden-import certifi --hidden-import charset_normalizer --hidden-import idna --hidden-import websocket --hidden-import websocket._abnf --hidden-import websocket._core --hidden-import websocket._exceptions --hidden-import websocket._handshake --hidden-import websocket._http --hidden-import websocket._logging --hidden-import websocket._socket --hidden-import websocket._ssl_compat --hidden-import websocket._url --hidden-import websocket._utils --collect-submodules requests --collect-submodules urllib3 --collect-submodules websocket yvz_gui.py
 
+      - name: Build YVZUPDATER.exe
+        shell: cmd
+        run: |
+          if exist YVZUPDATER.exe del /q YVZUPDATER.exe
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZUPDATER --distpath . --icon "yvztools.ico" updater.py
+
       - name: Verify executable
         shell: pwsh
         run: |
           if (-not (Test-Path -LiteralPath "YVZNETMATH.exe")) {
             throw "YVZNETMATH.exe was not created."
           }
-          $file = Get-Item -LiteralPath "YVZNETMATH.exe"
-          Write-Host "Built $($file.Name) - $($file.Length) bytes"
+          if (-not (Test-Path -LiteralPath "YVZUPDATER.exe")) { throw "YVZUPDATER.exe was not created." }
+          Get-Item -LiteralPath "YVZNETMATH.exe","YVZUPDATER.exe" | ForEach-Object { Write-Host "Built $($_.Name) - $($_.Length) bytes" }
 
-      - name: Publish v3.3 release
+      - name: Publish v3.4 release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = "Stop"
-          $tag = "v3.3"
+          $tag = "v3.4"
 
           gh release view $tag *> $null
           if ($LASTEXITCODE -eq 0) {
             Write-Host "Release $tag already exists; replacing the EXE asset."
-            gh release upload $tag YVZNETMATH.exe --clobber
+            gh release upload $tag YVZNETMATH.exe YVZUPDATER.exe --clobber
           } else {
             Write-Host "Creating release $tag."
-            gh release create $tag YVZNETMATH.exe --target main --title "YVZTOOLS v3.3" --generate-notes
+            gh release create $tag YVZNETMATH.exe YVZUPDATER.exe --target main --title "YVZTOOLS v3.4" --generate-notes
           }
 
           gh release view $tag
