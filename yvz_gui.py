@@ -11,7 +11,7 @@ from tkinter import ttk, messagebox, simpledialog
 from pathlib import Path
 
 APP_NAME = 'YVZTOOLS — NetMath Space'
-VERSION = '2.9.4 GUI'
+VERSION = '2.9.6 GUI'
 BASE = Path(__file__).resolve().parent
 CORE_PATH = BASE / 'yvznetmath_core.py'
 
@@ -146,7 +146,10 @@ class SpaceBackground(tk.Canvas):
             'dark': ([('#040714',0.0),('#071129',.25),('#0B1433',.52),('#17103A',.78),('#06091C',1.0)], '#77A5FF','#254BA5','#6337A0'),
             'pink': ([('#FFF8FC',0.0),('#FFF1F7',.25),('#FFE8F1',.55),('#FFF7FB',1.0)], '#E88CAF','#F4B8D0','#E5A4C1'),
             'hacker': ([('#010302',0.0),('#031008',.3),('#04160A',.62),('#020905',1.0)], '#39FF88','#0B5E31','#168C48'),
-            'red': ([('#070203',0.0),('#130407',.3),('#22070B',.62),('#090304',1.0)], '#FF526A','#741526','#9B263E')
+            'red': ([('#070203',0.0),('#130407',.3),('#22070B',.62),('#090304',1.0)], '#FF526A','#741526','#9B263E'),
+            'purple': ([('#07030F',0.0),('#100720',.28),('#1B0C38',.62),('#080312',1.0)], '#C084FC','#6D28D9','#A855F7'),
+            'cyan': ([('#01080C',0.0),('#03151D',.28),('#062532',.62),('#01070B',1.0)], '#67E8F9','#0E7490','#22D3EE'),
+            'orange': ([('#0D0501',0.0),('#1D0B03',.28),('#321407',.62),('#0A0401',1.0)], '#FDBA74','#9A3412','#F97316')
         }
         bands, star, arc1, arc2 = palettes.get(theme, palettes['dark'])
 
@@ -224,6 +227,21 @@ class App(tk.Tk):
                 'label':'🔥 CRIMSON', 'BG':'#090304','PANEL':'#190608','PANEL2':'#260A0E',
                 'TEXT':'#FFF1F2','MUTED':'#B9868D','ACCENT':'#F0445E',
                 'PURPLE':'#C83EAA','CYAN':'#FF7586','GREEN':'#58D89A','BORDER':'#6F1826'
+            },
+            'purple': {
+                'label':'💜 NEON PURPLE', 'BG':'#05030D','PANEL':'#130A29','PANEL2':'#1D1040',
+                'TEXT':'#F8F2FF','MUTED':'#A998C9','ACCENT':'#A855F7',
+                'PURPLE':'#C084FC','CYAN':'#E879F9','GREEN':'#6EE7B7','BORDER':'#5B21B6'
+            },
+            'cyan': {
+                'label':'🌊 CYBER CYAN', 'BG':'#020B10','PANEL':'#061720','PANEL2':'#0A2230',
+                'TEXT':'#E9FCFF','MUTED':'#7BAAB5','ACCENT':'#22D3EE',
+                'PURPLE':'#8B5CF6','CYAN':'#67E8F9','GREEN':'#34D399','BORDER':'#155E75'
+            },
+            'orange': {
+                'label':'🍊 SOLAR ORANGE', 'BG':'#100803','PANEL':'#1E1007','PANEL2':'#2C180A',
+                'TEXT':'#FFF7ED','MUTED':'#C5A383','ACCENT':'#F97316',
+                'PURPLE':'#FB7185','CYAN':'#FDBA74','GREEN':'#4ADE80','BORDER':'#9A3412'
             }
         }
         self._apply_theme_constants()
@@ -248,7 +266,7 @@ class App(tk.Tk):
         # Theme selector shown from the main control deck.
         win = tk.Toplevel(self)
         win.title('YVZTOOLS • Choose Theme')
-        win.geometry('430x330')
+        win.geometry('520x500')
         win.resizable(False, False)
         win.configure(bg=BG)
         try:
@@ -276,7 +294,7 @@ class App(tk.Tk):
             self._build_ui()
             self.refresh_status()
 
-        for name in ('dark', 'pink', 'hacker', 'red'):
+        for name in ('dark', 'pink', 'hacker', 'red', 'purple', 'cyan', 'orange'):
             t = self.themes[name]
             card = tk.Frame(win, bg=t['PANEL'], highlightthickness=1,
                             highlightbackground=t['BORDER'])
@@ -323,7 +341,7 @@ class App(tk.Tk):
                  font=('Segoe UI Black', 22)).pack(side='left')
         tk.Label(title_row, text='  NETMATH SPACE', bg=BG, fg=BLUE,
                  font=('Segoe UI Semibold', 11)).pack(side='left', pady=(7, 0))
-        tk.Label(title_row, text='V2.9.4', bg=PANEL2, fg=CYAN,
+        tk.Label(title_row, text='V2.9.6', bg=PANEL2, fg=CYAN,
                  font=('Segoe UI Semibold', 8), padx=10, pady=4).pack(side='right', pady=5)
         tk.Label(top, text='Desktop control center  •  Chrome + Gemini  •  fast math workflow',
                  bg=BG, fg=MUTED, font=('Segoe UI', 8)).pack(anchor='w', pady=(0, 3))
@@ -455,7 +473,7 @@ class App(tk.Tk):
         self.log.pack(fill='both', expand=True, padx=12, pady=(0, 5))
         self.log.configure(state='disabled')
 
-        self.write_log('V2.9.4 ready • R Chrome • Y Scan • A Solve • 1-4 Presets • T Theme')
+        self.write_log('V2.9.6 ready • R Chrome • Y Scan • A Solve • 1-4 Presets • T Theme')
 
     def write_log(self, text):
         self.log.configure(state='normal')
@@ -926,6 +944,9 @@ class YVZSplash(tk.Tk):
         'pink':   dict(top='#FFF8FC', bot='#FFE6F0', star='#E98BB0', ring1='#F2B5CC', ring2='#E5A4C1', accent='#E85D97', accent2='#A66AE8', text='#3B2130', sub='#D94D8E', muted='#9C6B80', track='#F6CFDF'),
         'hacker': dict(top='#010302', bot='#04180B', star='#39FF88', ring1='#0B5E31', ring2='#168C48', accent='#19E66B', accent2='#59FF9A', text='#D7FFE4', sub='#59FF9A', muted='#6EA77D', track='#0A2414'),
         'red':    dict(top='#070203', bot='#25080D', star='#FF526A', ring1='#741526', ring2='#9B263E', accent='#F0445E', accent2='#FF7586', text='#FFF1F2', sub='#FF7586', muted='#B9868D', track='#2A0C12'),
+        'purple': dict(top='#07030F', bot='#1B0C38', star='#C084FC', ring1='#6D28D9', ring2='#A855F7', accent='#A855F7', accent2='#E879F9', text='#F8F2FF', sub='#E879F9', muted='#A998C9', track='#32145F'),
+        'cyan':   dict(top='#01080C', bot='#062532', star='#67E8F9', ring1='#0E7490', ring2='#155E75', accent='#22D3EE', accent2='#67E8F9', text='#E9FCFF', sub='#67E8F9', muted='#7BAAB5', track='#0A3342'),
+        'orange': dict(top='#0D0501', bot='#321407', star='#FDBA74', ring1='#9A3412', ring2='#C2410C', accent='#F97316', accent2='#FDBA74', text='#FFF7ED', sub='#FDBA74', muted='#C5A383', track='#542008'),
     }
     STAGES = [(0.00, 'Starting engine'), (0.28, 'Loading math core'), (0.58, 'Preparing interface'), (0.86, 'Almost ready')]
 
@@ -1034,12 +1055,15 @@ def launch_app():
         'dark': ('🌌', 'SPACE BLUE', '#4A9BFF'),
         'pink': ('🌸', 'COTTON CANDY', '#E85D97'),
         'hacker': ('☠', 'HACKER GREEN', '#19E66B'),
-        'red': ('🔥', 'CRIMSON', '#F0445E')
+        'red': ('🔥', 'CRIMSON', '#F0445E'),
+        'purple': ('💜', 'NEON PURPLE', '#A855F7'),
+        'cyan': ('🌊', 'CYBER CYAN', '#22D3EE'),
+        'orange': ('🍊', 'SOLAR ORANGE', '#F97316')
     }
 
     picker = tk.Tk()
     picker.title('YVZTOOLS • Select Theme')
-    picker.geometry('650x470')
+    picker.geometry('860x500')
     picker.resizable(False, False)
     picker.configure(bg='#050817')
     selected = {'name': saved if saved in themes else 'dark'}
@@ -1061,8 +1085,8 @@ def launch_app():
         card = tk.Frame(grid, bg='#0B1230', highlightthickness=1,
                         highlightbackground='#263C82', cursor='hand2')
         card._theme_name = name
-        card.grid(row=i//2, column=i%2, padx=9, pady=9, sticky='nsew', ipadx=8, ipady=12)
-        grid.grid_columnconfigure(i%2, weight=1)
+        card.grid(row=i//4, column=i%4, padx=9, pady=9, sticky='nsew', ipadx=8, ipady=12)
+        grid.grid_columnconfigure(i%4, weight=1)
 
         tk.Label(card, text=icon, bg='#0B1230', fg=accent,
                  font=('Segoe UI Emoji', 22)).pack(pady=(6,0))
