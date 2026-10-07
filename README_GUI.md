@@ -1,4 +1,4 @@
-# YVZTOOLS NetMath Space - v2.9.4
+# YVZTOOLS NetMath Space - v2.9.6
 
 ## Install / update (users)
 1. Download BOTH files from https://github.com/ItsYvesss/yvztoolsnet/releases (latest release, Assets):
