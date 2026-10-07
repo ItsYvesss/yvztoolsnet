@@ -11,7 +11,7 @@ from tkinter import ttk, messagebox, simpledialog
 from pathlib import Path
 
 APP_NAME = 'YVZTOOLS — NetMath Space'
-VERSION = '2.9.6 GUI'
+VERSION = '2.9.7 GUI'
 BASE = Path(__file__).resolve().parent
 CORE_PATH = BASE / 'yvznetmath_core.py'
 
