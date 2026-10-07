@@ -1,4 +1,4 @@
-name: Build and Release v3.2
+name: Build and Release v3.3
 
 on:
   push:
@@ -41,13 +41,13 @@ jobs:
           $file = Get-Item -LiteralPath "YVZNETMATH.exe"
           Write-Host "Built $($file.Name) - $($file.Length) bytes"
 
-      - name: Publish v3.2 release
+      - name: Publish v3.3 release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = "Stop"
-          $tag = "v3.2"
+          $tag = "v3.3"
 
           gh release view $tag *> $null
           if ($LASTEXITCODE -eq 0) {
@@ -55,7 +55,7 @@ jobs:
             gh release upload $tag YVZNETMATH.exe --clobber
           } else {
             Write-Host "Creating release $tag."
-            gh release create $tag YVZNETMATH.exe --target main --title "YVZTOOLS v3.2" --generate-notes
+            gh release create $tag YVZNETMATH.exe --target main --title "YVZTOOLS v3.3" --generate-notes
           }
 
           gh release view $tag
