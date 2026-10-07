@@ -1,6 +1,11 @@
 """YVZTOOLS Updater — polished updater with a cinematic vault handoff."""
 import os, re, sys, json, time, math, subprocess, threading, urllib.request
 import tkinter as tk
+import ssl
+try:
+    import certifi
+except ImportError:
+    certifi = None
 
 GITHUB_REPO = "ItsYvesss/yvztoolsnet"
 ASSET_NAME = "YVZNETMATH.exe"
@@ -9,10 +14,11 @@ APP_EXE = os.path.join(APP_DIR, ASSET_NAME)
 VERSION_FILE = os.path.join(APP_DIR, "version.txt")
 API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 
-BG, BG2 = "#040714", "#0B1233"
-TEXT, MUTED = "#F4F7FF", "#91A1CC"
-ACCENT, ACCENT2 = "#4A9BFF", "#9A6BFF"
-TRACK, OK, BAD = "#14204D", "#4BE3B0", "#FF6B8A"
+BG, BG2 = "#030303", "#101010"
+TEXT, MUTED = "#FFFFFF", "#A6A6A6"
+ACCENT, ACCENT2 = "#FFFFFF", "#777777"
+TRACK, OK, BAD = "#262626", "#FFFFFF", "#D0D0D0"
+UPDATER_VERSION = "3.6"
 
 
 def parse(v):
@@ -26,9 +32,14 @@ def local_version():
         return "0"
 
 
+def ssl_context():
+    return ssl.create_default_context(cafile=certifi.where()) if certifi else ssl.create_default_context()
+
+SSL_CONTEXT = ssl_context()
+
 def http_json(url):
-    req = urllib.request.Request(url, headers={"User-Agent": "YVZTOOLS-Updater/3.4", "Accept": "application/vnd.github+json"})
-    with urllib.request.urlopen(req, timeout=15) as r:
+    req = urllib.request.Request(url, headers={"User-Agent": f"YVZTOOLS-Updater/{UPDATER_VERSION}", "Accept": "application/vnd.github+json"})
+    with urllib.request.urlopen(req, timeout=20, context=SSL_CONTEXT) as r:
         return json.load(r)
 
 
@@ -44,7 +55,7 @@ class Updater(tk.Tk):
         self.c = tk.Canvas(self, width=self.W, height=self.H, bg=BG, highlightthickness=0, bd=0)
         self.c.pack()
         self.title_txt = "YVZTOOLS"
-        self.sub_txt = "Smart updater • checking your vault"
+        self.sub_txt = "SMART UPDATE ENGINE • VERIFYING RELEASE CHANNEL"
         self.right_txt = ""
         self.pct = None
         self.state_col = ACCENT
@@ -113,7 +124,7 @@ class Updater(tk.Tk):
             c.create_oval(cx-15,cy-15,cx+15,cy+15,outline=ACCENT2,width=1)
             c.create_text(110,42,anchor="w",text="YVZTOOLS",fill=TEXT,font=("Segoe UI Black",22))
             c.create_text(110,67,anchor="w",text="SMART UPDATER",fill=ACCENT,font=("Segoe UI Semibold",9))
-            c.create_text(110,86,anchor="w",text="NETMATH SPACE  •  V3.4",fill=MUTED,font=("Segoe UI",8))
+            c.create_text(110,86,anchor="w",text="NETMATH SPACE  •  V3.6",fill=MUTED,font=("Segoe UI",8))
             c.create_text(42,126,anchor="w",text=self.title_txt,fill=TEXT,font=("Segoe UI Semibold",16))
             c.create_text(42,152,anchor="w",text=self.sub_txt,fill=MUTED,font=("Segoe UI",9))
 
@@ -167,8 +178,8 @@ class Updater(tk.Tk):
             latest=rel["tag_name"]
             cur=local_version()
             if parse(latest)<=parse(cur) and os.path.exists(APP_EXE):
-                self.ui_state("YVZTOOLS is up to date",f"Installed {cur}  •  no update needed","READY",1.0,OK)
-                self.start_finish("YVZTOOLS READY",f"v{cur} is installed  •  opening vault",OK,True)
+                self.ui_state("SYSTEM IS CURRENT",f"Installed {cur}  •  latest release {latest}","NO DOWNLOAD NEEDED",1.0,OK)
+                self.start_finish("YVZTOOLS READY",f"v{cur} is already current  •  opening",OK,True)
                 return
 
             asset=next((a for a in rel.get("assets",[]) if a["name"]==ASSET_NAME),None)
@@ -178,13 +189,13 @@ class Updater(tk.Tk):
                 return
 
             installed="not installed" if cur=="0" else cur
-            self.ui_state(f"Downloading {latest}",f"{installed}  →  {latest}","CONNECTING",0.0,ACCENT)
+            self.ui_state(f"DOWNLOADING {latest.upper()}",f"{installed}  →  {latest}","CONNECTING TO GITHUB",0.0,ACCENT)
             subprocess.run(["taskkill","/IM",ASSET_NAME,"/F"],capture_output=True,creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0))
             time.sleep(.6)
 
             tmp=APP_EXE+".new"
-            req=urllib.request.Request(asset["browser_download_url"],headers={"User-Agent":"YVZTOOLS-Updater/3.4"})
-            with urllib.request.urlopen(req,timeout=30) as r, open(tmp,"wb") as f:
+            req=urllib.request.Request(asset["browser_download_url"],headers={"User-Agent":f"YVZTOOLS-Updater/{UPDATER_VERSION}"})
+            with urllib.request.urlopen(req,timeout=60,context=SSL_CONTEXT) as r, open(tmp,"wb") as f:
                 total=int(r.headers.get("Content-Length") or 0)
                 done,t0=0,time.time()
                 while True:
@@ -192,12 +203,12 @@ class Updater(tk.Tk):
                     if not chunk: break
                     f.write(chunk); done+=len(chunk)
                     speed=done/max(time.time()-t0,.1)/1048576
-                    self.ui_state(f"Downloading {latest}",f"{installed}  →  {latest}",f"{done/1048576:.1f} / {(total/1048576):.1f} MB  •  {speed:.1f} MB/s",(done/total) if total else None,ACCENT)
+                    self.ui_state(f"DOWNLOADING {latest.upper()}",f"{installed}  →  {latest}",f"{done/1048576:.1f} / {(total/1048576):.1f} MB  •  {speed:.1f} MB/s",(done/total) if total else None,ACCENT)
 
             if total and os.path.getsize(tmp)!=total:
                 raise IOError("Download incomplete")
 
-            self.ui_state("Installing V3.4","Replacing old YVZTOOLS build…","INSTALL",1.0,ACCENT2)
+            self.ui_state("INSTALLING UPDATE","Replacing the old YVZNETMATH core…","SWAP + VERIFY",1.0,ACCENT2)
             bak=APP_EXE+".bak"
             if os.path.exists(APP_EXE):
                 if os.path.exists(bak): os.remove(bak)
