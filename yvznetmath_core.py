@@ -39,28 +39,39 @@ except ImportError:
 
 
 def post_with_retry(**kwargs):
-    """requests.post wrapper that retries on transient connection drops
-    AND on 429/500/502/503/504 responses, which for Gemini's free tier
-    usually mean 'server temporarily overloaded, try again shortly'
-    rather than a real failure."""
+    """POST helper with retries for transient Gemini/API failures."""
+    if requests is None:
+        raise RuntimeError(
+            "The requests Python package is not available in this build. "
+            "Reinstall/rebuild YVZNETMATH.exe with requirements.txt."
+        )
+
     max_attempts = 2
     retry_statuses = {429, 500, 502, 503, 504}
     last_err = None
+    connection_errors = (
+        requests.exceptions.ConnectionError,
+        requests.exceptions.ChunkedEncodingError,
+    )
+
     for attempt in range(1, max_attempts + 1):
         try:
             resp = requests.post(**kwargs)
-        except (requests.exceptions.ConnectionError, requests.exceptions.ChunkedEncodingError) as e:
+        except connection_errors as e:
             last_err = e
             if attempt < max_attempts:
                 time.sleep(0.8 * (2 ** (attempt - 1)))
                 continue
             raise
+
         if resp.status_code in retry_statuses and attempt < max_attempts:
             wait = 0.8 * (2 ** (attempt - 1))
             print(f"  (attempt {attempt} failed [{resp.status_code}] - retrying in {wait:.1f}s...)")
             time.sleep(wait)
             continue
+
         return resp
+
     raise last_err
 
 
@@ -86,7 +97,7 @@ SITE_HINTS = ["netmath", "netfrancais"]  # matched against tab URL / title, case
 # sibling instruction headings are now handled), and solve_question
 # was overhauled with the screenshot-capture feature and the 1-4
 # preset menu (Gemini-only, Anthropic/Claude removed as an option).
-TOOL_VERSION = "2.2"
+TOOL_VERSION = "2.3"
 
 
 # --------------------------------------------------------------------------- #
