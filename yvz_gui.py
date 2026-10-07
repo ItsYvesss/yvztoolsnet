@@ -11,7 +11,7 @@ from tkinter import ttk, messagebox, simpledialog
 from pathlib import Path
 
 APP_NAME = 'YVZTOOLS — NetMath Space'
-VERSION = '3.1 GUI'
+VERSION = '3.2 GUI'
 BASE = Path(__file__).resolve().parent
 CORE_PATH = BASE / 'yvznetmath_core.py'
 
@@ -145,7 +145,7 @@ class SpaceBackground(tk.Canvas):
         palettes = {
             'dark': ([('#040714',0.0),('#071129',.25),('#0B1433',.52),('#17103A',.78),('#06091C',1.0)], '#77A5FF','#254BA5','#6337A0'),
             'pink': ([('#FFF8FC',0.0),('#FFF1F7',.25),('#FFE8F1',.55),('#FFF7FB',1.0)], '#E88CAF','#F4B8D0','#E5A4C1'),
-            'chocolate': ([('#120A06',0.0),('#1A0D07',.25),('#241108',.55),('#32170A',1.0)], '#E8A36A','#70401F','#A95D2E'),
+            'chocolate': ([('#2B0F05',0.0),('#4A1F0A',.25),('#6B2E0C',.55),('#3A1205',1.0)], '#FFD0A3','#9A4D1A','#D9782B'),
             'orange': ([('#160A02',0.0),('#221005',.25),('#321607',.55),('#431F09',1.0)], '#FFB15C','#8C4814','#C55D13'),
             'purple': ([('#090518',0.0),('#110822',.25),('#190D32',.55),('#241047',1.0)], '#C08CFF','#54309A','#7D4AC2'),
             'hacker': ([('#010302',0.0),('#031008',.3),('#04160A',.62),('#020905',1.0)], '#39FF88','#0B5E31','#168C48'),
@@ -234,7 +234,7 @@ class App(tk.Tk):
                 'PURPLE':'#C08CFF','CYAN':'#7EDCFF','GREEN':'#65E6B5','BORDER':'#54309A'
             },
             'chocolate': {
-                'label':'🍫 CHOCOLATE', 'BG':'#120A06','PANEL':'#21120B','PANEL2':'#321B10',
+                'label':'🍫 CHOCOLATE', 'BG':'#2B0F05','PANEL':'#4A1F0A','PANEL2':'#6B2E0C',
                 'TEXT':'#FFF3E8','MUTED':'#B99A86','ACCENT':'#C9793D',
                 'PURPLE':'#B46AE8','CYAN':'#E4B07A','GREEN':'#8ED49A','BORDER':'#70401F'
             },
