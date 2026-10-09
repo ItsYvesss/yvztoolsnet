@@ -1,4 +1,4 @@
-name: Build and Release v3.9
+name: Build and publish YVZTools v4.0
 
 on:
   push:
@@ -22,53 +22,60 @@ jobs:
 
       - name: Install dependencies
         shell: pwsh
-        run: python -m pip install --upgrade pip; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; python -m pip install -r requirements.txt
-
-      - name: Build YVZNETMATH.exe
-        shell: cmd
         run: |
-          if exist build rmdir /s /q build
-          if exist dist rmdir /s /q dist
-          if exist YVZNETMATH.exe del /q YVZNETMATH.exe
-          python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZNETMATH --distpath . --icon "yvztools.ico" --add-data "yvznetmath_core.py;." --add-data "yvztools.ico;." --hidden-import requests --hidden-import requests.adapters --hidden-import requests.api --hidden-import requests.auth --hidden-import requests.cookies --hidden-import requests.exceptions --hidden-import requests.models --hidden-import requests.sessions --hidden-import requests.status_codes --hidden-import requests.structures --hidden-import requests.utils --hidden-import urllib3 --hidden-import certifi --hidden-import charset_normalizer --hidden-import idna --hidden-import websocket --hidden-import websocket._abnf --hidden-import websocket._core --hidden-import websocket._exceptions --hidden-import websocket._handshake --hidden-import websocket._http --hidden-import websocket._logging --hidden-import websocket._socket --hidden-import websocket._ssl_compat --hidden-import websocket._url --hidden-import websocket._utils --collect-submodules requests --collect-submodules urllib3 --collect-submodules websocket yvz_gui.py
+          python -m pip install --upgrade pip
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m pip install -r requirements.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Build YVZTOOLS-INSTALLER.exe
-        shell: cmd
-        run: |
-          if exist YVZTOOLS-INSTALLER.exe del /q YVZTOOLS-INSTALLER.exe
-          python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZTOOLS-INSTALLER --distpath . --icon "yvztools.ico" --add-data "yvztools.ico;." installer.py
-
-      - name: Build YVZUPDATER.exe
-        shell: cmd
-        run: |
-          if exist YVZUPDATER.exe del /q YVZUPDATER.exe
-          python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZUPDATER --distpath . --icon "yvztools.ico" updater.py
-
-      - name: Verify executable
+      - name: Verify source version
         shell: pwsh
         run: |
-          if (-not (Test-Path -LiteralPath "YVZNETMATH.exe")) {
-            throw "YVZNETMATH.exe was not created."
-          }
-          if (-not (Test-Path -LiteralPath "YVZUPDATER.exe")) { throw "YVZUPDATER.exe was not created." }
-          if (-not (Test-Path -LiteralPath "YVZTOOLS-INSTALLER.exe")) { throw "YVZTOOLS-INSTALLER.exe was not created." }
-          Get-Item -LiteralPath "YVZNETMATH.exe","YVZUPDATER.exe","YVZTOOLS-INSTALLER.exe" | ForEach-Object { Write-Host "Built $($_.Name) - $($_.Length) bytes" }
+          $line = Select-String -Path version.py -Pattern '^APP_VERSION\s*=\s*"([^"]+)"'
+          if (-not $line) { throw "APP_VERSION is missing." }
+          if ($line.Matches[0].Groups[1].Value -ne "4.0.0") { throw "This release workflow only publishes source version 4.0.0." }
 
-      - name: Publish v3.9 release
+      - name: Build YVZNETMATH.exe
+        shell: pwsh
+        run: |
+          Remove-Item -Recurse -Force build, dist -ErrorAction SilentlyContinue
+          Remove-Item -Force YVZNETMATH.exe -ErrorAction SilentlyContinue
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZNETMATH --distpath dist --icon yvztools.ico --add-data "yvznetmath_core.py;." --add-data "yvztools.ico;." --hidden-import requests --hidden-import certifi --hidden-import websocket --collect-submodules websocket yvz_gui.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build YVZUPDATER.exe
+        shell: pwsh
+        run: |
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZUPDATER --distpath dist --icon yvztools.ico updater.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build YVZTOOLS-INSTALLER.exe
+        shell: pwsh
+        run: |
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZTOOLS-INSTALLER --distpath dist --icon yvztools.ico installer.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Verify build outputs
+        shell: pwsh
+        run: |
+          $files = @("dist/YVZNETMATH.exe", "dist/YVZUPDATER.exe", "dist/YVZTOOLS-INSTALLER.exe")
+          foreach ($file in $files) {
+            if (-not (Test-Path -LiteralPath $file)) { throw "Missing build output: $file" }
+            if ((Get-Item -LiteralPath $file).Length -lt 1000000) { throw "Build output is unexpectedly small: $file" }
+            Write-Host "$file — $((Get-Item -LiteralPath $file).Length) bytes"
+          }
+
+      - name: Publish v4.0 release once
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = "Stop"
-          $tag = "v3.9"
-
+          $tag = "v4.0"
           gh release view $tag *> $null
           if ($LASTEXITCODE -eq 0) {
-            Write-Host "Release $tag already exists; replacing the EXE asset."
-            gh release upload $tag YVZNETMATH.exe YVZUPDATER.exe YVZTOOLS-INSTALLER.exe --clobber
+            Write-Host "YVZTools v4.0 already exists; keeping the published release immutable."
           } else {
-            Write-Host "Creating release $tag."
-            gh release create $tag YVZNETMATH.exe YVZUPDATER.exe YVZTOOLS-INSTALLER.exe --target main --title "YVZTOOLS v3.9" --generate-notes
+            gh release create $tag dist/YVZNETMATH.exe dist/YVZUPDATER.exe dist/YVZTOOLS-INSTALLER.exe --target main --title "YVZTools v4.0" --generate-notes
+            if ($LASTEXITCODE -ne 0) { throw "Failed to publish YVZTools v4.0." }
           }
-
-          gh release view $tag
