@@ -1,4 +1,4 @@
-"""YVZTools v4.0 installer; installs the latest stable app and updater."""
+"""YVZTools v4.1 installer; installs the latest stable app and updater."""
 import os
 import sys
 import json
@@ -17,7 +17,7 @@ except ImportError:
 
 GITHUB_REPO = "ItsYvesss/yvztoolsnet"
 API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
-INSTALLER_VERSION = "4.0.0"
+INSTALLER_VERSION = "4.1.0"
 APP_NAME = "YVZNETMATH.exe"
 UPDATER_NAME = "YVZUPDATER.exe"
 
