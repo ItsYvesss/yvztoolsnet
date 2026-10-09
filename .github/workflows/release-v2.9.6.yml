@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: yvztools-v4-release
+  cancel-in-progress: true
+
 jobs:
   release:
     runs-on: windows-latest
@@ -74,7 +78,9 @@ jobs:
           $tag = "v4.0"
           gh release view $tag *> $null
           if ($LASTEXITCODE -eq 0) {
-            Write-Host "YVZTools v4.0 already exists; keeping the published release immutable."
+            Write-Host "YVZTools v4.0 already exists; replacing assets with artifacts from this clean build."
+            gh release upload $tag dist/YVZNETMATH.exe dist/YVZUPDATER.exe dist/YVZTOOLS-INSTALLER.exe --clobber
+            if ($LASTEXITCODE -ne 0) { throw "Failed to update YVZTools v4.0 assets." }
           } else {
             gh release create $tag dist/YVZNETMATH.exe dist/YVZUPDATER.exe dist/YVZTOOLS-INSTALLER.exe --target main --title "YVZTools v4.0" --generate-notes
             if ($LASTEXITCODE -ne 0) { throw "Failed to publish YVZTools v4.0." }
