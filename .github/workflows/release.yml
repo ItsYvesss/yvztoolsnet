@@ -38,7 +38,7 @@ jobs:
         shell: pwsh
         run: |
           Remove-Item -Recurse -Force build, dist -ErrorAction SilentlyContinue
-          python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZNETMATH --distpath dist --icon yvztools.ico --version-file version_info.txt --add-data "yvznetmath_core.py;." --add-data "yvztools.ico;." --hidden-import websocket --hidden-import requests --collect-submodules websocket yvz_gui.py
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZNETMATH --distpath dist --icon yvztools.ico --version-file version_info.txt --add-data "yvznetmath_core.py;." --add-data "yvztools.ico;." --hidden-import requests --hidden-import requests.adapters --hidden-import requests.api --hidden-import requests.auth --hidden-import requests.cookies --hidden-import requests.exceptions --hidden-import requests.models --hidden-import requests.sessions --hidden-import requests.status_codes --hidden-import requests.structures --hidden-import requests.utils --hidden-import urllib3 --hidden-import certifi --hidden-import charset_normalizer --hidden-import idna --hidden-import websocket --hidden-import websocket._abnf --hidden-import websocket._core --hidden-import websocket._exceptions --hidden-import websocket._handshake --hidden-import websocket._http --hidden-import websocket._logging --hidden-import websocket._socket --hidden-import websocket._ssl_compat --hidden-import websocket._url --hidden-import websocket._utils --collect-submodules requests --collect-submodules urllib3 --collect-submodules websocket yvz_gui.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Build YVZUPDATER.exe
