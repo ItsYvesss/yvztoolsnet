@@ -176,7 +176,7 @@ class Installer(tk.Tk):
             assets = {asset["name"]: asset for asset in release.get("assets", [])}
             missing = [name for name in (APP_NAME, UPDATER_NAME) if name not in assets]
             if missing:
-                raise RuntimeError(f"The v3.9 release is missing required file(s): {\", \".join(missing)}")
+                raise RuntimeError("The v3.9 release is missing required file(s): " + ", ".join(missing))
             # Always install the app AND the matching updater from the pinned v3.9 release.
             wanted = [APP_NAME, UPDATER_NAME]
 
@@ -187,7 +187,7 @@ class Installer(tk.Tk):
                 dest = os.path.join(self.folder, name)
                 req = urllib.request.Request(
                     assets[name]["browser_download_url"],
-                    headers={"User-Agent": "YVZTOOLS-Installer/3.8"},
+                    headers={"User-Agent": "YVZTOOLS-Installer/3.9"},
                 )
                 self.ui(f"Downloading {name}", f"YVZTOOLS {tag} • {self.folder}", 0)
                 with urllib.request.urlopen(req, timeout=30, context=SSL_CONTEXT) as response, open(dest, "wb") as output:
