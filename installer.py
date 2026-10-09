@@ -81,7 +81,7 @@ class Installer(tk.Tk):
         super().__init__()
         # Use a normal Windows window: native title bar, working X, taskbar entry,
         # Alt+Tab support, and standard Windows window management.
-        self.title("YVZTools Installer v4.0")
+        self.title("YVZTools Installer v4.1")
         self.resizable(False, False)
         self.configure(bg=BG)
         try:
