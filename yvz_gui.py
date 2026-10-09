@@ -11,7 +11,9 @@ from tkinter import ttk, messagebox, simpledialog
 from pathlib import Path
 
 APP_NAME = 'YVZTOOLS — NetMath Space'
-VERSION = '3.9'
+from version import APP_VERSION, DISPLAY_VERSION
+
+VERSION = APP_VERSION
 BASE = Path(__file__).resolve().parent
 CORE_PATH = BASE / 'yvznetmath_core.py'
 
@@ -189,7 +191,7 @@ class SpaceBackground(tk.Canvas):
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title(APP_NAME)
+        self.title(f'{APP_NAME} {DISPLAY_VERSION}')
         self.geometry('1100x700')
         self.minsize(780, 600)
         self.resizable(True, True)
@@ -348,7 +350,7 @@ class App(tk.Tk):
                  font=('Segoe UI Black', 22)).pack(side='left')
         tk.Label(title_row, text='  NETMATH SPACE', bg=BG, fg=BLUE,
                  font=('Segoe UI Semibold', 11)).pack(side='left', pady=(7, 0))
-        tk.Label(title_row, text='V3.6', bg=PANEL2, fg=CYAN,
+        tk.Label(title_row, text=DISPLAY_VERSION.upper(), bg=PANEL2, fg=CYAN,
                  font=('Segoe UI Semibold', 8), padx=10, pady=4).pack(side='right', pady=5)
         tk.Label(top, text='Smart homework control center  •  Chrome + Gemini  •  scan → solve',
                  bg=BG, fg=MUTED, font=('Segoe UI', 8)).pack(anchor='w', pady=(0, 3))
@@ -480,7 +482,7 @@ class App(tk.Tk):
         self.log.pack(fill='both', expand=True, padx=12, pady=(0, 5))
         self.log.configure(state='disabled')
 
-        self.write_log('V3.4 ready • R Chrome • Y Scan • A Solve • 1-4 Presets • T Theme')
+        self.write_log('V4.0 ready • R Chrome • Y Scan • A Solve • 1-4 Presets • T Theme')
 
     def write_log(self, text):
         self.log.configure(state='normal')
@@ -1044,7 +1046,7 @@ class YVZSplash(tk.Tk):
         dots = '.' * (int(el * 3) % 4)
         c.create_text(x0, y + 24, anchor='w', text=stage + dots, fill=P['muted'], font=('Segoe UI', 9), tags='dyn')
         c.create_text(x1, y + 24, anchor='e', text=f'{int(prog * 100)}%', fill=P['sub'], font=('Segoe UI Semibold', 9), tags='dyn')
-        c.create_text(cx, self.H - 18, text=f'v{VERSION.split()[0]}', fill=P['muted'], font=('Segoe UI', 8), tags='dyn')
+        c.create_text(cx, self.H - 18, text=DISPLAY_VERSION, fill=P['muted'], font=('Segoe UI', 8), tags='dyn')
 
         if el < self.DURATION:
             self.after(16, self.animate)
@@ -1104,7 +1106,7 @@ def launch_app():
              font=('Segoe UI Black', 30)).pack(pady=(18, 0))
     tk.Label(content, text='NETMATH SPACE', bg='#050817', fg='#61D8FF',
              font=('Segoe UI Semibold', 11)).pack(pady=(0, 6))
-    tk.Label(content, text='V3.4  •  READY TO LAUNCH', bg='#050817', fg='#91A1CC',
+    tk.Label(content, text=f'{DISPLAY_VERSION.upper()}  •  READY TO LAUNCH', bg='#050817', fg='#91A1CC',
              font=('Segoe UI', 8)).pack(pady=(0, 20))
 
     theme_text = tk.Label(

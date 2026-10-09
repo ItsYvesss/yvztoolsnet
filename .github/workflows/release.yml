@@ -1,4 +1,4 @@
-name: Build and release YVZNETMATH
+name: Build and release YVZTools
 
 on:
   push:
@@ -17,6 +17,17 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Verify tag matches application version
+        shell: pwsh
+        run: |
+          $versionLine = Select-String -Path version.py -Pattern '^APP_VERSION\s*=\s*"([^"]+)"'
+          if (-not $versionLine) { throw "APP_VERSION is missing from version.py." }
+          $appVersion = $versionLine.Matches[0].Groups[1].Value
+          $tagVersion = $env:GITHUB_REF_NAME.TrimStart('v')
+          $appParts = $appVersion.Split('.')
+          $tagParts = $tagVersion.Split('.')
+          if ($appParts[0] -ne $tagParts[0] -or $appParts[1] -ne $tagParts[1]) { throw "Tag does not match version.py ($appVersion)." }
+
       - name: Install dependencies
         shell: pwsh
         run: |
@@ -26,20 +37,39 @@ jobs:
       - name: Build YVZNETMATH.exe
         shell: pwsh
         run: |
-          python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZNETMATH --distpath dist --icon yvztools.ico --add-data "yvznetmath_core.py;." --add-data "yvztools.ico;." --hidden-import websocket --hidden-import requests --collect-submodules websocket yvz_gui.py
+          Remove-Item -Recurse -Force build, dist -ErrorAction SilentlyContinue
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZNETMATH --distpath dist --icon yvztools.ico --version-file version_info.txt --add-data "yvznetmath_core.py;." --add-data "yvztools.ico;." --hidden-import websocket --hidden-import requests --collect-submodules websocket yvz_gui.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Build YVZUPDATER.exe
         shell: pwsh
         run: |
-          python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZUPDATER --distpath dist --icon yvztools.ico updater.py
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZUPDATER --distpath dist --icon yvztools.ico --version-file version_info_updater.txt updater.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: List output
+      - name: Build YVZTOOLS-INSTALLER.exe
         shell: pwsh
-        run: Get-ChildItem dist
+        run: |
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZTOOLS-INSTALLER --distpath dist --icon yvztools.ico --version-file version_info_installer.txt installer.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - uses: softprops/action-gh-release@v2
+      - name: Verify build outputs
+        shell: pwsh
+        run: |
+          $files = @("dist/YVZNETMATH.exe", "dist/YVZUPDATER.exe", "dist/YVZTOOLS-INSTALLER.exe")
+          foreach ($file in $files) {
+            if (-not (Test-Path -LiteralPath $file)) { throw "Missing build output: $file" }
+            if ((Get-Item -LiteralPath $file).Length -lt 1000000) { throw "Build output is unexpectedly small: $file" }
+            Write-Host "$file — $((Get-Item -LiteralPath $file).Length) bytes"
+          }
+
+      - name: Publish release assets
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
+          name: YVZTools ${{ github.ref_name }}
+          generate_release_notes: true
           files: |
             dist/YVZNETMATH.exe
             dist/YVZUPDATER.exe
+            dist/YVZTOOLS-INSTALLER.exe
