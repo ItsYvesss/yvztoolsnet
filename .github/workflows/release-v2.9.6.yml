@@ -1,4 +1,4 @@
-name: Build and Release v3.6
+name: Build and Release v3.7
 
 on:
   push:
@@ -54,13 +54,13 @@ jobs:
           if (-not (Test-Path -LiteralPath "YVZTOOLS-INSTALLER.exe")) { throw "YVZTOOLS-INSTALLER.exe was not created." }
           Get-Item -LiteralPath "YVZNETMATH.exe","YVZUPDATER.exe","YVZTOOLS-INSTALLER.exe" | ForEach-Object { Write-Host "Built $($_.Name) - $($_.Length) bytes" }
 
-      - name: Publish v3.6 release
+      - name: Publish v3.7 release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = "Stop"
-          $tag = "v3.6"
+          $tag = "v3.7"
 
           gh release view $tag *> $null
           if ($LASTEXITCODE -eq 0) {
@@ -68,7 +68,7 @@ jobs:
             gh release upload $tag YVZNETMATH.exe YVZUPDATER.exe YVZTOOLS-INSTALLER.exe --clobber
           } else {
             Write-Host "Creating release $tag."
-            gh release create $tag YVZNETMATH.exe YVZUPDATER.exe YVZTOOLS-INSTALLER.exe --target main --title "YVZTOOLS v3.6" --generate-notes
+            gh release create $tag YVZNETMATH.exe YVZUPDATER.exe YVZTOOLS-INSTALLER.exe --target main --title "YVZTOOLS v3.7" --generate-notes
           }
 
           gh release view $tag
