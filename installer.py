@@ -190,6 +190,7 @@ class Installer(tk.Tk):
         temp_paths = []
         backups = {}
         replaced = []
+        preserve_backups = False
         try:
             os.makedirs(self.folder, exist_ok=True)
             if self.stop_event.is_set():
@@ -272,7 +273,7 @@ class Installer(tk.Tk):
                         elif os.path.exists(dest):
                             os.remove(dest)
                     except OSError:
-                        pass
+                        preserve_backups = True
                 raise
 
             for backup in backups.values():
@@ -291,12 +292,13 @@ class Installer(tk.Tk):
                         os.remove(temp_path)
                 except OSError:
                     pass
-            for backup in backups.values():
-                try:
-                    if os.path.exists(backup):
-                        os.remove(backup)
-                except OSError:
-                    pass
+            if not preserve_backups:
+                for backup in backups.values():
+                    try:
+                        if os.path.exists(backup):
+                            os.remove(backup)
+                    except OSError:
+                        pass
 
     def finish(self):
         if self.closing:
