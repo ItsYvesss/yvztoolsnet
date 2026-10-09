@@ -186,7 +186,10 @@ class Installer(tk.Tk):
             self.after(100, self.poll_updates)
 
     def run(self):
+        import shutil
         temp_paths = []
+        backups = {}
+        replaced = []
         try:
             os.makedirs(self.folder, exist_ok=True)
             if self.stop_event.is_set():
@@ -203,7 +206,7 @@ class Installer(tk.Tk):
             if missing:
                 raise RuntimeError(f"The latest stable release {tag} is missing: " + ", ".join(missing))
 
-            total_files = len(wanted)
+            # Download and verify every asset before replacing any installed executable.
             for index, name in enumerate(wanted):
                 if self.stop_event.is_set():
                     return
@@ -215,7 +218,7 @@ class Installer(tk.Tk):
                     asset["browser_download_url"],
                     headers={"User-Agent": f"YVZTOOLS-Installer/{INSTALLER_VERSION}", "Accept": "application/octet-stream"},
                 )
-                self.ui(f"Downloading {name}", f"YVZTOOLS {tag} • {self.folder}", 0)
+                self.ui(f"Downloading {name}", f"YVZTOOLS {tag} • {self.folder}", index / len(wanted))
                 with urllib.request.urlopen(req, timeout=30, context=SSL_CONTEXT) as response, open(temp_dest, "wb") as output:
                     total = int(response.headers.get("Content-Length") or 0)
                     done = 0
@@ -228,20 +231,55 @@ class Installer(tk.Tk):
                         output.write(chunk)
                         done += len(chunk)
                         local = done / total if total > 0 else 0
-                        progress = (index + local) / total_files
+                        progress = (index + local) / len(wanted)
                         self.ui(pct=progress, sub=f"{name} • {done / 1048576:.1f} MB downloaded")
-
                 verify_installer_asset(temp_dest, asset)
-                if self.stop_event.is_set():
-                    return
-                os.replace(temp_dest, dest)
 
             if self.stop_event.is_set():
                 return
-            version_temp = os.path.join(self.folder, "version.txt.tmp")
+            version_path = os.path.join(self.folder, "version.txt")
+            version_temp = version_path + ".tmp"
+            temp_paths.append(version_temp)
             with open(version_temp, "w", encoding="utf-8") as version_file:
                 version_file.write(tag)
-            os.replace(version_temp, os.path.join(self.folder, "version.txt"))
+
+            destinations = [
+                (os.path.join(self.folder, APP_NAME), os.path.join(self.folder, APP_NAME + ".download")),
+                (os.path.join(self.folder, UPDATER_NAME), os.path.join(self.folder, UPDATER_NAME + ".download")),
+                (version_path, version_temp),
+            ]
+            for dest, _staged in destinations:
+                if os.path.exists(dest):
+                    backup = dest + ".v4backup"
+                    if os.path.exists(backup):
+                        os.remove(backup)
+                    shutil.copy2(dest, backup)
+                    backups[dest] = backup
+
+            try:
+                for dest, staged in destinations:
+                    if self.stop_event.is_set():
+                        raise RuntimeError("Installation was cancelled before files were replaced.")
+                    os.replace(staged, dest)
+                    replaced.append(dest)
+            except Exception:
+                # Roll back any files already replaced so a failed upgrade does not leave mixed versions.
+                for dest in reversed(replaced):
+                    backup = backups.get(dest)
+                    try:
+                        if backup and os.path.exists(backup):
+                            os.replace(backup, dest)
+                        elif os.path.exists(dest):
+                            os.remove(dest)
+                    except OSError:
+                        pass
+                raise
+
+            for backup in backups.values():
+                try:
+                    os.remove(backup)
+                except OSError:
+                    pass
             self.ui("Installation complete", f"YVZTOOLS {tag} installed. Existing settings and data were left in place.", 1.0, "finish")
         except Exception as exc:
             if not self.stop_event.is_set():
@@ -251,6 +289,12 @@ class Installer(tk.Tk):
                 try:
                     if os.path.exists(temp_path):
                         os.remove(temp_path)
+                except OSError:
+                    pass
+            for backup in backups.values():
+                try:
+                    if os.path.exists(backup):
+                        os.remove(backup)
                 except OSError:
                     pass
 
