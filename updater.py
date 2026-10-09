@@ -24,7 +24,7 @@ USER_AGENT = f"YVZTOOLS-Updater/{UPDATER_VERSION}"
 
 
 def version_tuple(value):
-    """Parse v4.0, 4.0.0, or older version tags into comparable numeric tuples."""
+    """Parse v4.1, 4.1.0, or older version tags into comparable numeric tuples."""
     found = re.findall(r"\d+", str(value or ""))
     return tuple(int(part) for part in found) if found else (0,)
 
