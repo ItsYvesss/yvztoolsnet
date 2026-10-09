@@ -12,13 +12,13 @@ ASSET_NAME = "YVZNETMATH.exe"
 APP_DIR = os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__))
 APP_EXE = os.path.join(APP_DIR, ASSET_NAME)
 VERSION_FILE = os.path.join(APP_DIR, "version.txt")
-API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
+API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/tags/v3.9"
 
 BG, BG2 = "#030303", "#101010"
 TEXT, MUTED = "#FFFFFF", "#A6A6A6"
 ACCENT, ACCENT2 = "#FFFFFF", "#777777"
 TRACK, OK, BAD = "#262626", "#FFFFFF", "#D0D0D0"
-UPDATER_VERSION = "3.6"
+UPDATER_VERSION = "3.9"
 
 
 def parse(v):
@@ -48,7 +48,10 @@ class Updater(tk.Tk):
 
     def __init__(self):
         super().__init__()
-        self.overrideredirect(True)
+        self.title("YVZTOOLS Updater v3.9")
+        self.resizable(False, False)
+        self.protocol("WM_DELETE_WINDOW", self.destroy)
+        self.bind("<Escape>", lambda _event: self.destroy())
         sw, sh = self.winfo_screenwidth(), self.winfo_screenheight()
         self.geometry(f"{self.W}x{self.H}+{(sw-self.W)//2}+{(sh-self.H)//2}")
         self.configure(bg=BG)
@@ -124,7 +127,7 @@ class Updater(tk.Tk):
             c.create_oval(cx-15,cy-15,cx+15,cy+15,outline=ACCENT2,width=1)
             c.create_text(110,42,anchor="w",text="YVZTOOLS",fill=TEXT,font=("Segoe UI Black",22))
             c.create_text(110,67,anchor="w",text="SMART UPDATER",fill=ACCENT,font=("Segoe UI Semibold",9))
-            c.create_text(110,86,anchor="w",text="NETMATH SPACE  •  V3.6",fill=MUTED,font=("Segoe UI",8))
+            c.create_text(110,86,anchor="w",text="NETMATH SPACE  •  V3.9",fill=MUTED,font=("Segoe UI",8))
             c.create_text(42,126,anchor="w",text=self.title_txt,fill=TEXT,font=("Segoe UI Semibold",16))
             c.create_text(42,152,anchor="w",text=self.sub_txt,fill=MUTED,font=("Segoe UI",9))
 
@@ -177,11 +180,9 @@ class Updater(tk.Tk):
             rel=http_json(API)
             latest=rel["tag_name"]
             cur=local_version()
-            if parse(latest)<=parse(cur) and os.path.exists(APP_EXE):
-                self.ui_state("SYSTEM IS CURRENT",f"Installed {cur}  •  latest release {latest}","NO DOWNLOAD NEEDED",1.0,OK)
-                self.start_finish("YVZTOOLS READY",f"v{cur} is already current  •  opening",OK,True)
-                return
-
+            # Always refresh from the pinned v3.9 release. version.txt can say v3.9
+            # even when an older EXE was copied over it, so version-only checks can
+            # accidentally skip the actual UI update.
             asset=next((a for a in rel.get("assets",[]) if a["name"]==ASSET_NAME),None)
             if not asset:
                 self.ui_state("Update unavailable",f"{ASSET_NAME} is missing from {latest}","",None,BAD)
@@ -190,9 +191,6 @@ class Updater(tk.Tk):
 
             installed="not installed" if cur=="0" else cur
             self.ui_state(f"DOWNLOADING {latest.upper()}",f"{installed}  →  {latest}","CONNECTING TO GITHUB",0.0,ACCENT)
-            subprocess.run(["taskkill","/IM",ASSET_NAME,"/F"],capture_output=True,creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0))
-            time.sleep(.6)
-
             tmp=APP_EXE+".new"
             req=urllib.request.Request(asset["browser_download_url"],headers={"User-Agent":f"YVZTOOLS-Updater/{UPDATER_VERSION}"})
             with urllib.request.urlopen(req,timeout=60,context=SSL_CONTEXT) as r, open(tmp,"wb") as f:
@@ -208,7 +206,9 @@ class Updater(tk.Tk):
             if total and os.path.getsize(tmp)!=total:
                 raise IOError("Download incomplete")
 
-            self.ui_state("INSTALLING UPDATE","Replacing the old YVZNETMATH core…","SWAP + VERIFY",1.0,ACCENT2)
+            self.ui_state("INSTALLING UPDATE","Closing YVZTOOLS and replacing the old app…","SWAP + VERIFY",1.0,ACCENT2)
+            subprocess.run(["taskkill","/IM",ASSET_NAME,"/F"],capture_output=True,creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0))
+            time.sleep(.8)
             bak=APP_EXE+".bak"
             if os.path.exists(APP_EXE):
                 if os.path.exists(bak): os.remove(bak)
