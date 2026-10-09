@@ -46,13 +46,13 @@ jobs:
       - name: Build YVZUPDATER.exe
         shell: pwsh
         run: |
-          python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZUPDATER --distpath dist --icon yvztools.ico --version-file version_info.txt updater.py
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZUPDATER --distpath dist --icon yvztools.ico --version-file version_info_updater.txt updater.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Build YVZTOOLS-INSTALLER.exe
         shell: pwsh
         run: |
-          python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZTOOLS-INSTALLER --distpath dist --icon yvztools.ico --version-file version_info.txt installer.py
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZTOOLS-INSTALLER --distpath dist --icon yvztools.ico --version-file version_info_installer.txt installer.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Verify build outputs
