@@ -185,7 +185,10 @@ class Updater(tk.Tk):
         if self.busy:
             return
         self.cancel_event.clear()
+        self.latest_tag = None
+        self.latest_asset = None
         self.set_busy(True)
+        self.cancel_btn.configure(state="disabled")
         self.update_btn.configure(state="disabled")
         self.retry_btn.configure(state="disabled")
         self.status_var.set("Checking for updates…")
