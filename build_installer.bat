@@ -2,7 +2,7 @@
 setlocal
 cd /d "%~dp0"
 echo ================================================
-echo   YVZTOOLS INSTALLER - WINDOWS EXE BUILD
+echo   YVZTOOLS v4.0 INSTALLER - WINDOWS EXE BUILD
 echo ================================================
 where python >nul 2>nul || (echo Python not found. Install Python 3.11+ first. & pause & exit /b 1)
 python -m pip install -r requirements.txt
