@@ -13,7 +13,7 @@ from pathlib import Path
 APP_NAME = 'YVZTOOLS — NetMath Space'
 from version import APP_VERSION, DISPLAY_VERSION
 
-VERSION = DISPLAY_VERSION[1:]  # UI version; APP_VERSION is the internal semantic version
+VERSION = APP_VERSION
 BASE = Path(__file__).resolve().parent
 CORE_PATH = BASE / 'yvznetmath_core.py'
 
@@ -191,7 +191,7 @@ class SpaceBackground(tk.Canvas):
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title(APP_NAME)
+        self.title(f'{APP_NAME} {DISPLAY_VERSION}')
         self.geometry('1100x700')
         self.minsize(780, 600)
         self.resizable(True, True)
@@ -1046,7 +1046,7 @@ class YVZSplash(tk.Tk):
         dots = '.' * (int(el * 3) % 4)
         c.create_text(x0, y + 24, anchor='w', text=stage + dots, fill=P['muted'], font=('Segoe UI', 9), tags='dyn')
         c.create_text(x1, y + 24, anchor='e', text=f'{int(prog * 100)}%', fill=P['sub'], font=('Segoe UI Semibold', 9), tags='dyn')
-        c.create_text(cx, self.H - 18, text=f'v{VERSION.split()[0]}', fill=P['muted'], font=('Segoe UI', 8), tags='dyn')
+        c.create_text(cx, self.H - 18, text=DISPLAY_VERSION, fill=P['muted'], font=('Segoe UI', 8), tags='dyn')
 
         if el < self.DURATION:
             self.after(16, self.animate)
