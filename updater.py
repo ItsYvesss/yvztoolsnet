@@ -14,12 +14,12 @@ from tkinter import ttk, messagebox
 from pathlib import Path
 
 GITHUB_REPO = "ItsYvesss/yvztoolsnet"
-RELEASE_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
+RELEASE_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/tags/v4.1"
 APP_NAME = "YVZNETMATH.exe"
 APP_DIR = Path(sys.executable if getattr(sys, "frozen", False) else __file__).resolve().parent
 APP_EXE = APP_DIR / APP_NAME
 VERSION_FILE = APP_DIR / "version.txt"
-UPDATER_VERSION = "4.0.0"
+UPDATER_VERSION = "4.1.0"
 USER_AGENT = f"YVZTOOLS-Updater/{UPDATER_VERSION}"
 
 
@@ -102,8 +102,8 @@ class Updater(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("YVZTools Updater")
-        self.geometry("650x440")
-        self.minsize(600, 420)
+        self.geometry("760x590")
+        self.minsize(720, 560)
         self.resizable(False, False)
         self.configure(bg="#080D20")
         self.protocol("WM_DELETE_WINDOW", self.close)
@@ -119,51 +119,96 @@ class Updater(tk.Tk):
         self.current_var = tk.StringVar(value=f"Installed version: {display_version(self.current_version)}")
         self.latest_var = tk.StringVar(value="Latest version: checking…")
 
-        outer = tk.Frame(self, bg="#080D20", padx=26, pady=22)
+        outer = tk.Frame(self, bg="#080D20", padx=24, pady=20)
         outer.pack(fill="both", expand=True)
-        tk.Label(outer, text="YVZTOOLS", bg="#080D20", fg="#F4F7FF",
-                 font=("Segoe UI", 25, "bold")).pack(anchor="w")
-        tk.Label(outer, text="UPDATER  •  OFFICIAL STABLE RELEASES",
-                 bg="#080D20", fg="#59B8FF", font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(0, 20))
 
-        panel = tk.Frame(outer, bg="#111A37", highlightbackground="#263C70", highlightthickness=1, padx=18, pady=17)
+        # Space-station banner: stars, orbit lines and a glowing planet are real canvas artwork.
+        hero = tk.Canvas(outer, height=132, bg="#080D20", highlightthickness=0, bd=0)
+        hero.pack(fill="x", pady=(0, 15))
+        hero.create_oval(520, -82, 735, 133, fill="#152B68", outline="#355DCE", width=2)
+        hero.create_oval(552, -53, 706, 102, fill="#1E4C9A", outline="#58CFFF", width=2)
+        hero.create_oval(579, -25, 678, 74, fill="#367DE0", outline="")
+        hero.create_arc(530, -63, 724, 118, start=195, extent=150, style="arc", outline="#7E8DFF", width=3)
+        hero.create_arc(543, -48, 713, 104, start=18, extent=150, style="arc", outline="#4DE4FF", width=2)
+        for x, y, radius, color in [
+            (22,18,2,"#FFFFFF"),(64,43,1,"#65DFFF"),(118,12,2,"#8CA9FF"),
+            (169,76,1,"#FFFFFF"),(221,27,2,"#4FE6FF"),(274,56,1,"#FFFFFF"),
+            (332,18,2,"#A9B8FF"),(382,91,1,"#FFFFFF"),(426,39,2,"#5BD9FF"),
+            (477,15,1,"#FFFFFF"),(494,94,2,"#9AABFF"),(42,101,1,"#9AABFF"),
+            (145,36,1,"#FFFFFF"),(300,102,2,"#5BD9FF"),(455,70,1,"#FFFFFF")
+        ]:
+            hero.create_oval(x-radius, y-radius, x+radius, y+radius, fill=color, outline="")
+        hero.create_text(10, 10, anchor="nw", text="YVZTOOLS", fill="#F6F8FF",
+                        font=("Segoe UI", 26, "bold"))
+        hero.create_text(12, 51, anchor="nw", text="UPDATE CONTROL CENTER", fill="#58D9FF",
+                        font=("Segoe UI", 10, "bold"))
+        hero.create_text(12, 76, anchor="nw", text="OFFICIAL STABLE CHANNEL  •  RELEASE v4.1",
+                        fill="#AAB9E8", font=("Segoe UI", 9, "bold"))
+        hero.create_line(12, 119, 705, 119, fill="#243A70", width=1)
+        hero.create_line(12, 119, 190, 119, fill="#4FE6FF", width=2)
+
+        panel = tk.Frame(outer, bg="#111A37", highlightbackground="#304A88", highlightthickness=1, padx=18, pady=15)
         panel.pack(fill="x")
         tk.Label(panel, textvariable=self.status_var, bg="#111A37", fg="#F4F7FF",
-                 font=("Segoe UI", 15, "bold"), anchor="w", wraplength=540, justify="left").pack(fill="x")
+                 font=("Segoe UI", 16, "bold"), anchor="w", wraplength=660, justify="left").pack(fill="x")
         tk.Label(panel, textvariable=self.detail_var, bg="#111A37", fg="#AAB8DD",
-                 font=("Segoe UI", 9), anchor="w", wraplength=540, justify="left").pack(fill="x", pady=(7, 13))
-        tk.Label(panel, textvariable=self.current_var, bg="#111A37", fg="#E5EBFF",
-                 font=("Segoe UI", 10), anchor="w").pack(fill="x", pady=2)
-        tk.Label(panel, textvariable=self.latest_var, bg="#111A37", fg="#E5EBFF",
-                 font=("Segoe UI", 10), anchor="w").pack(fill="x", pady=2)
+                 font=("Segoe UI", 9), anchor="w", wraplength=660, justify="left").pack(fill="x", pady=(6, 13))
 
-        self.progress = ttk.Progressbar(outer, mode="determinate", maximum=100, value=0, length=590)
-        self.progress.pack(fill="x", pady=(20, 4))
-        self.progress_label = tk.Label(outer, text="", bg="#080D20", fg="#AAB8DD",
-                                       font=("Segoe UI", 9), anchor="w")
-        self.progress_label.pack(fill="x")
+        versions = tk.Frame(panel, bg="#111A37")
+        versions.pack(fill="x")
+        current_card = tk.Frame(versions, bg="#172447", highlightbackground="#2E4A7D", highlightthickness=1, padx=12, pady=10)
+        current_card.pack(side="left", fill="x", expand=True, padx=(0, 7))
+        tk.Label(current_card, text="INSTALLED BUILD", bg="#172447", fg="#8DA6DE",
+                 font=("Segoe UI", 8, "bold")).pack(anchor="w")
+        tk.Label(current_card, textvariable=self.current_var, bg="#172447", fg="#EAF0FF",
+                 font=("Segoe UI", 11, "bold"), anchor="w").pack(anchor="w", pady=(4, 0))
+        latest_card = tk.Frame(versions, bg="#142C49", highlightbackground="#286A92", highlightthickness=1, padx=12, pady=10)
+        latest_card.pack(side="left", fill="x", expand=True, padx=(7, 0))
+        tk.Label(latest_card, text="LATEST STABLE RELEASE", bg="#142C49", fg="#5EDFFF",
+                 font=("Segoe UI", 8, "bold")).pack(anchor="w")
+        tk.Label(latest_card, textvariable=self.latest_var, bg="#142C49", fg="#F4FBFF",
+                 font=("Segoe UI", 11, "bold"), anchor="w").pack(anchor="w", pady=(4, 0))
+
+        progress_header = tk.Frame(outer, bg="#080D20")
+        progress_header.pack(fill="x", pady=(17, 5))
+        tk.Label(progress_header, text="TRANSFER / INSTALL PROGRESS", bg="#080D20", fg="#8FA8E3",
+                 font=("Segoe UI", 8, "bold")).pack(side="left")
+        tk.Label(progress_header, text="SECURE CHANNEL  •  SHA-256 VERIFY", bg="#080D20", fg="#4DE4FF",
+                 font=("Segoe UI", 8, "bold")).pack(side="right")
+        style = ttk.Style(self)
+        style.theme_use("clam")
+        style.configure("Space.Horizontal.TProgressbar", troughcolor="#172344",
+                        background="#36CFFF", bordercolor="#172344", lightcolor="#6AE7FF",
+                        darkcolor="#2589FF", thickness=13)
+        self.progress = ttk.Progressbar(outer, style="Space.Horizontal.TProgressbar",
+                                        mode="determinate", maximum=100, value=0, length=700)
+        self.progress.pack(fill="x")
+        self.progress_label = tk.Label(outer, text="Connecting to the release network…", bg="#080D20",
+                                       fg="#AAB8DD", font=("Segoe UI", 9), anchor="w")
+        self.progress_label.pack(fill="x", pady=(6, 0))
 
         row = tk.Frame(outer, bg="#080D20")
-        row.pack(fill="x", side="bottom", pady=(20, 0))
-        self.update_btn = tk.Button(row, text="Update Now", command=self.start_update,
-                                    bg="#2589FF", fg="white", activebackground="#4AA0FF",
+        row.pack(fill="x", side="bottom", pady=(16, 0))
+        self.update_btn = tk.Button(row, text="  ✦  UPDATE NOW  ", command=self.start_update,
+                                    bg="#197DFF", fg="white", activebackground="#36A0FF",
                                     activeforeground="white", relief="flat", bd=0,
-                                    font=("Segoe UI", 10, "bold"), padx=20, pady=10, state="disabled")
+                                    font=("Segoe UI", 10, "bold"), padx=15, pady=11, state="disabled",
+                                    cursor="hand2")
         self.update_btn.pack(side="left")
-        self.retry_btn = tk.Button(row, text="Retry Check", command=self.check_updates,
+        self.retry_btn = tk.Button(row, text="↻  Retry Check", command=self.check_updates,
                                    bg="#1A2548", fg="#F4F7FF", activebackground="#283B70",
                                    activeforeground="white", relief="flat", bd=0,
-                                   font=("Segoe UI", 10), padx=16, pady=10, state="disabled")
+                                   font=("Segoe UI", 10), padx=14, pady=11, state="disabled", cursor="hand2")
         self.retry_btn.pack(side="left", padx=(9, 0))
-        self.cancel_btn = tk.Button(row, text="Cancel Download", command=self.cancel_download,
+        self.cancel_btn = tk.Button(row, text="✕  Cancel Download", command=self.cancel_download,
                                     bg="#442333", fg="#FFFFFF", activebackground="#67344A",
                                     activeforeground="white", relief="flat", bd=0,
-                                    font=("Segoe UI", 10), padx=14, pady=10, state="disabled")
+                                    font=("Segoe UI", 10), padx=13, pady=11, state="disabled", cursor="hand2")
         self.cancel_btn.pack(side="left", padx=(9, 0))
         self.close_btn = tk.Button(row, text="Close", command=self.close,
                                    bg="#1A2548", fg="#F4F7FF", activebackground="#283B70",
                                    activeforeground="white", relief="flat", bd=0,
-                                   font=("Segoe UI", 10), padx=18, pady=10)
+                                   font=("Segoe UI", 10), padx=18, pady=11, cursor="hand2")
         self.close_btn.pack(side="right")
         self.after(100, self.poll_events)
         self.check_updates()
@@ -195,7 +240,7 @@ class Updater(tk.Tk):
         self.detail_var.set("Reading the latest stable release from GitHub.")
         self.progress.configure(value=0, mode="indeterminate")
         self.progress.start(10)
-        self.progress_label.configure(text="")
+        self.progress_label.configure(text="Searching the official v4.1 release…")
         self.worker = threading.Thread(target=self.check_worker, daemon=True)
         self.worker.start()
 
