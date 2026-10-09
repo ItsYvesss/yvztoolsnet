@@ -2,11 +2,11 @@
 
 ## DOWNLOAD YVZTOOLS
 
-### ⭐ [DOWNLOAD YVZTOOLS INSTALLER](https://github.com/ItsYvesss/yvztoolsnet/releases/download/v3.6/YVZTOOLS-INSTALLER.exe)
+### ⭐ [DOWNLOAD YVZTOOLS INSTALLER](https://github.com/ItsYvesss/yvztoolsnet/releases/download/v3.8/YVZTOOLS-INSTALLER.exe)
 
 Download the installer, run **YVZTOOLS-INSTALLER.exe**, choose where you want the folder saved, and the installer will:
 
-- ✦ Show the animated YVZTOOLS installer
+- 🪟 Open as a normal Windows app with a title bar and taskbar entry
 - 📁 Let you choose the install location
 - ⬇️ Download the latest YVZTOOLS files
 - 📦 Create the **YVZTOOLS** folder
