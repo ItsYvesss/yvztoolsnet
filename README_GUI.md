@@ -1,4 +1,4 @@
-# YVZTOOLS NetMath Space - v4.0
+# YVZTOOLS NetMath Space - v4.1
 
 ## Install / update (users)
 1. Download the installer from the [latest stable release](https://github.com/ItsYvesss/yvztoolsnet/releases/latest/download/YVZTOOLS-INSTALLER.exe), or download both `YVZNETMATH.exe` and `YVZUPDATER.exe` from the release assets.
