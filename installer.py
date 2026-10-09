@@ -1,4 +1,4 @@
-"""YVZTOOLS Installer v3.8 — responsive native Windows installer."""
+"""YVZTOOLS Installer v3.9 — installs the matching app and updater."""
 import os
 import sys
 import json
@@ -16,7 +16,7 @@ except ImportError:
     certifi = None
 
 GITHUB_REPO = "ItsYvesss/yvztoolsnet"
-API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
+API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/tags/v3.9"
 APP_NAME = "YVZNETMATH.exe"
 UPDATER_NAME = "YVZUPDATER.exe"
 
@@ -47,7 +47,7 @@ def get_json(url):
     req = urllib.request.Request(
         url,
         headers={
-            "User-Agent": "YVZTOOLS-Installer/3.8",
+            "User-Agent": "YVZTOOLS-Installer/3.9",
             "Accept": "application/vnd.github+json",
         },
     )
@@ -62,7 +62,7 @@ class Installer(tk.Tk):
         super().__init__()
         # Use a normal Windows window: native title bar, working X, taskbar entry,
         # Alt+Tab support, and standard Windows window management.
-        self.title("YVZTOOLS Installer v3.8")
+        self.title("YVZTOOLS Installer v3.9")
         self.resizable(False, False)
         self.configure(bg=BG)
         try:
@@ -174,11 +174,11 @@ class Installer(tk.Tk):
             release = get_json(API)
             tag = release["tag_name"]
             assets = {asset["name"]: asset for asset in release.get("assets", [])}
-            if APP_NAME not in assets:
-                raise RuntimeError("The latest release does not contain YVZNETMATH.exe.")
-            wanted = [APP_NAME]
-            if UPDATER_NAME in assets:
-                wanted.append(UPDATER_NAME)
+            missing = [name for name in (APP_NAME, UPDATER_NAME) if name not in assets]
+            if missing:
+                raise RuntimeError(f"The v3.9 release is missing required file(s): {\", \".join(missing)}")
+            # Always install the app AND the matching updater from the pinned v3.9 release.
+            wanted = [APP_NAME, UPDATER_NAME]
 
             total_files = len(wanted)
             for index, name in enumerate(wanted):
@@ -239,7 +239,7 @@ class Installer(tk.Tk):
         c.create_rectangle(0, 0, self.W, 5, fill=BLUE, outline="")
         c.create_rectangle(24, 22, self.W-24, self.H-22, fill=PANEL, outline="#20356F")
         c.create_text(48, 55, anchor="w", text="YVZTOOLS", fill=TEXT, font=("Segoe UI", 29, "bold"))
-        c.create_text(50, 84, anchor="w", text="INSTALLER  •  V3.8", fill=BLUE, font=("Segoe UI Semibold", 10))
+        c.create_text(50, 84, anchor="w", text="INSTALLER  •  V3.9", fill=BLUE, font=("Segoe UI Semibold", 10))
         c.create_text(48, 133, anchor="w", text=self.msg, fill=TEXT, font=("Segoe UI Semibold", 16))
         c.create_text(48, 162, anchor="w", text=self.sub[:85], fill=MUTED, font=("Segoe UI", 9))
         c.create_text(48, 205, anchor="w", text="INSTALL LOCATION", fill=MUTED, font=("Segoe UI Semibold", 8))
