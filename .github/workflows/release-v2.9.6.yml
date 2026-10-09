@@ -40,19 +40,19 @@ jobs:
         run: |
           Remove-Item -Recurse -Force build, dist -ErrorAction SilentlyContinue
           Remove-Item -Force YVZNETMATH.exe -ErrorAction SilentlyContinue
-          python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZNETMATH --distpath dist --icon yvztools.ico --add-data "yvznetmath_core.py;." --add-data "yvztools.ico;." --hidden-import requests --hidden-import certifi --hidden-import websocket --collect-submodules websocket yvz_gui.py
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZNETMATH --distpath dist --icon yvztools.ico --version-file version_info.txt --add-data "yvznetmath_core.py;." --add-data "yvztools.ico;." --hidden-import requests --hidden-import certifi --hidden-import websocket --collect-submodules websocket yvz_gui.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Build YVZUPDATER.exe
         shell: pwsh
         run: |
-          python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZUPDATER --distpath dist --icon yvztools.ico updater.py
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZUPDATER --distpath dist --icon yvztools.ico --version-file version_info.txt updater.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Build YVZTOOLS-INSTALLER.exe
         shell: pwsh
         run: |
-          python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZTOOLS-INSTALLER --distpath dist --icon yvztools.ico installer.py
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name YVZTOOLS-INSTALLER --distpath dist --icon yvztools.ico --version-file version_info.txt installer.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Verify build outputs
