@@ -26,7 +26,7 @@ def make_ssl_context():
 SSL_CONTEXT = make_ssl_context()
 
 def get_json(url):
-    req=urllib.request.Request(url, headers={"User-Agent":"YVZTOOLS-Installer/3.6","Accept":"application/vnd.github+json"})
+    req=urllib.request.Request(url, headers={"User-Agent":"YVZTOOLS-Installer/3.7","Accept":"application/vnd.github+json"})
     with urllib.request.urlopen(req, timeout=20, context=SSL_CONTEXT) as r:
         return json.load(r)
 
@@ -46,7 +46,11 @@ class Installer(tk.Tk):
         self.msg="Choose where YVZTOOLS will be installed."
         self.sub="The installer will create the YVZTOOLS folder and download the latest build."
         self.t0=time.time()
-        self.after(16,self.draw)
+        self._draw_job = None
+        self._close_hover = False
+        self.protocol("WM_DELETE_WINDOW", self.close)
+        self.bind("<Escape>", lambda e: self.close())
+        self.after(50,self.draw)
 
     def close(self):
         if self.closing:
@@ -55,8 +59,23 @@ class Installer(tk.Tk):
         self.destroy()
 
     def choose(self):
-        p=filedialog.askdirectory(title="Choose YVZTOOLS installation folder",
-                                  initialdir=os.path.dirname(self.folder))
+        # Pause canvas animation while the native folder picker is open.
+        if self._draw_job is not None:
+            try:
+                self.after_cancel(self._draw_job)
+            except tk.TclError:
+                pass
+            self._draw_job = None
+        try:
+            p = filedialog.askdirectory(
+                parent=self,
+                title="Choose YVZTOOLS installation folder",
+                initialdir=os.path.dirname(self.folder),
+                mustexist=True,
+            )
+        finally:
+            if not self.closing:
+                self._draw_job = self.after(50, self.draw)
         if p:
             self.folder=p if os.path.basename(p).upper()=="YVZTOOLS" else os.path.join(p,"YVZTOOLS")
 
@@ -88,7 +107,7 @@ class Installer(tk.Tk):
                 url=assets[name]["browser_download_url"]
                 dest=os.path.join(self.folder,name)
                 self.ui(f"Downloading {name}",f"YVZTOOLS {tag} • {self.folder}")
-                req=urllib.request.Request(url,headers={"User-Agent":"YVZTOOLS-Installer/3.6"})
+                req=urllib.request.Request(url,headers={"User-Agent":"YVZTOOLS-Installer/3.7"})
                 with urllib.request.urlopen(req,timeout=60,context=SSL_CONTEXT) as r, open(dest,"wb") as f:
                     total=int(r.headers.get("Content-Length") or 0); done=0
                     while True:
@@ -144,8 +163,9 @@ class Installer(tk.Tk):
         c.tag_bind("close", "<Leave>", lambda e: self._set_close_hover(False))
         c.tag_bind("close", "<Button-1>", lambda e: self.close())
         c.create_rectangle(0,0,self.W,4,fill=BLUE,outline="")
+        c.tag_raise("close")
         c.create_text(48,54,anchor="w",text="YVZTOOLS",fill=TEXT,font=("Segoe UI Black",30))
-        c.create_text(50,84,anchor="w",text="INSTALLER  •  V3.6",fill=BLUE,font=("Segoe UI Semibold",10))
+        c.create_text(50,84,anchor="w",text="INSTALLER  •  V3.7",fill=BLUE,font=("Segoe UI Semibold",10))
         c.create_text(48,136,anchor="w",text=self.msg,fill=TEXT,font=("Segoe UI Semibold",17))
         c.create_text(48,165,anchor="w",text=self.sub,fill=MUTED,font=("Segoe UI",9))
         c.create_text(48,211,anchor="w",text="INSTALL LOCATION",fill=MUTED,font=("Segoe UI Semibold",8))
@@ -165,9 +185,9 @@ class Installer(tk.Tk):
             c.create_text(48,350,anchor="w",text=f"{int(self.pct*100)}%",fill=GREEN,font=("Segoe UI Semibold",9))
             c.create_text(632,350,anchor="e",text="YVZTOOLS • SECURE INSTALL",fill=MUTED,font=("Segoe UI",8))
         c.create_text(48,430,anchor="w",text="YVZTOOLS NETMATH SPACE",fill=MUTED,font=("Segoe UI",8))
-        self.after(16,self.draw)
+        if not self.closing:
+            self._draw_job = self.after(50,self.draw)
 
 if __name__=="__main__":
     app=Installer()
-    app.bind("<Escape>", lambda e: app.close())
     app.mainloop()
