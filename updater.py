@@ -6,6 +6,8 @@ import queue
 import re
 import subprocess
 import sys
+import ssl
+import certifi
 import threading
 import urllib.error
 import urllib.request
@@ -21,6 +23,9 @@ APP_EXE = APP_DIR / APP_NAME
 VERSION_FILE = APP_DIR / "version.txt"
 UPDATER_VERSION = "4.2.0"
 USER_AGENT = f"YVZTOOLS-Updater/{UPDATER_VERSION}"
+# Use certifi’s bundled Mozilla CA roots so HTTPS certificate validation works
+# in the PyInstaller one-file build as well as a normal Python installation.
+SSL_CONTEXT = ssl.create_default_context(cafile=certifi.where())
 
 
 def version_tuple(value):
@@ -57,7 +62,7 @@ def request_json(url):
         url,
         headers={"User-Agent": USER_AGENT, "Accept": "application/vnd.github+json"},
     )
-    with urllib.request.urlopen(req, timeout=20) as response:
+    with urllib.request.urlopen(req, timeout=20, context=SSL_CONTEXT) as response:
         data = json.load(response)
     if not isinstance(data, dict):
         raise ValueError("GitHub returned invalid release metadata.")
@@ -295,7 +300,7 @@ class Updater(tk.Tk):
                 self.latest_asset["browser_download_url"],
                 headers={"User-Agent": USER_AGENT, "Accept": "application/octet-stream"},
             )
-            with urllib.request.urlopen(req, timeout=25) as response:
+            with urllib.request.urlopen(req, timeout=25, context=SSL_CONTEXT) as response:
                 total = int(response.headers.get("Content-Length") or 0)
                 done = 0
                 with temp_path.open("wb") as output:
