@@ -153,7 +153,8 @@ class SpaceBackground(tk.Canvas):
             'purple': ([('#090518',0.0),('#110822',.25),('#190D32',.55),('#241047',1.0)], '#C08CFF','#54309A','#7D4AC2'),
             'hacker': ([('#010302',0.0),('#031008',.3),('#04160A',.62),('#020905',1.0)], '#39FF88','#0B5E31','#168C48'),
             'red': ([('#070203',0.0),('#130407',.3),('#22070B',.62),('#090304',1.0)], '#FF526A','#741526','#9B263E'),
-            'yvl': ([('#050505',0.0),('#111111',.3),('#202020',.62),('#080808',1.0)], '#FFFFFF','#666666','#AAAAAA')
+            'yvl': ([('#050505',0.0),('#111111',.3),('#202020',.62),('#080808',1.0)], '#FFFFFF','#666666','#AAAAAA'),
+            'oreo': ([('#F7F3EE',0.0),('#E7E0D8',.3),('#C9BFB4',.62),('#F7F3EE',1.0)], '#3B2923','#6B5145','#241B18')
         }
         bands, star, arc1, arc2 = palettes.get(theme, palettes['dark'])
 
@@ -251,6 +252,11 @@ class App(tk.Tk):
                 'label':'◼ YVL', 'BG':'#050505','PANEL':'#111111','PANEL2':'#202020',
                 'TEXT':'#FFFFFF','MUTED':'#AAAAAA','ACCENT':'#FFFFFF',
                 'PURPLE':'#CCCCCC','CYAN':'#E6E6E6','GREEN':'#BFBFBF','BORDER':'#444444'
+            },
+            'oreo': {
+                'label':'🍪 OREO', 'BG':'#F7F3EE','PANEL':'#FFFFFF','PANEL2':'#E8E0D8',
+                'TEXT':'#241B18','MUTED':'#76665D','ACCENT':'#3B2923',
+                'PURPLE':'#6B5145','CYAN':'#9B8172','GREEN':'#4D7660','BORDER':'#C8B9AC'
             }
         }
         self._apply_theme_constants()
@@ -303,16 +309,26 @@ class App(tk.Tk):
             self._build_ui()
             self.refresh_status()
 
-        for name in ('dark', 'pink', 'purple', 'chocolate', 'orange', 'hacker', 'red', 'yvl'):
+        canvas = tk.Canvas(win, bg=BG, highlightthickness=0, bd=0)
+        scrollbar = ttk.Scrollbar(win, orient='vertical', command=canvas.yview)
+        canvas.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side='right', fill='y', padx=(0, 8), pady=8)
+        canvas.pack(side='left', fill='both', expand=True, padx=(12, 0), pady=8)
+        list_frame = tk.Frame(canvas, bg=BG)
+        window_id = canvas.create_window((0, 0), window=list_frame, anchor='nw')
+        list_frame.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
+        canvas.bind('<Configure>', lambda e: canvas.itemconfigure(window_id, width=e.width))
+        canvas.bind_all('<MouseWheel>', lambda e: canvas.yview_scroll(int(-1 * (e.delta / 120)), 'units'))
+        for name in self.themes:
             t = self.themes[name]
-            card = tk.Frame(win, bg=t['PANEL'], highlightthickness=1,
+            card = tk.Frame(list_frame, bg=t['PANEL'], highlightthickness=1,
                             highlightbackground=t['BORDER'])
-            card.pack(fill='x', padx=28, pady=5, ipady=4)
+            card.pack(fill='x', padx=12, pady=4, ipady=2)
             btn = tk.Button(card, text=t['label'], command=lambda x=name: choose(x),
                             bg=t['PANEL2'], fg=t['TEXT'], activebackground=t['ACCENT'],
                             activeforeground='white', relief='flat', bd=0,
                             font=('Segoe UI Semibold', 9), cursor='hand2')
-            btn.pack(fill='x', padx=7, pady=6)
+            btn.pack(fill='x', padx=7, pady=5)
 
 
     def _build_styles(self):
@@ -953,6 +969,7 @@ class YVZSplash(tk.Tk):
         'pink':   dict(top='#FFF8FC', bot='#FFE6F0', star='#E98BB0', ring1='#F2B5CC', ring2='#E5A4C1', accent='#E85D97', accent2='#A66AE8', text='#3B2130', sub='#D94D8E', muted='#9C6B80', track='#F6CFDF'),
         'hacker': dict(top='#010302', bot='#04180B', star='#39FF88', ring1='#0B5E31', ring2='#168C48', accent='#19E66B', accent2='#59FF9A', text='#D7FFE4', sub='#59FF9A', muted='#6EA77D', track='#0A2414'),
         'red':    dict(top='#070203', bot='#25080D', star='#FF526A', ring1='#741526', ring2='#9B263E', accent='#F0445E', accent2='#FF7586', text='#FFF1F2', sub='#FF7586', muted='#B9868D', track='#2A0C12'),
+        'oreo':   dict(top='#F7F3EE', bot='#D8CEC4', star='#3B2923', ring1='#6B5145', ring2='#9B8172', accent='#3B2923', accent2='#76665D', text='#241B18', sub='#4B352C', muted='#76665D', track='#C8B9AC'),
     }
     STAGES = [(0.00, 'Starting engine'), (0.28, 'Loading math core'), (0.58, 'Preparing interface'), (0.86, 'Almost ready')]
 
@@ -1066,7 +1083,8 @@ def launch_app():
         'orange': ('🍊', 'SOLAR ORANGE', '#FF8A2B', '#160A02', '#261306'),
         'hacker': ('☠', 'HACKER GREEN', '#19E66B', '#020604', '#06110A'),
         'red': ('🔥', 'CRIMSON', '#F0445E', '#090304', '#190608'),
-        'yvl': ('◼', 'YVL', '#FFFFFF', '#050505', '#111111')
+        'yvl': ('◼', 'YVL', '#FFFFFF', '#050505', '#111111'),
+        'oreo': ('🍪', 'OREO', '#3B2923', '#F7F3EE', '#FFFFFF')
     }
 
     selected = {'name': saved if saved in themes else 'dark'}
@@ -1138,8 +1156,18 @@ def launch_app():
         tk.Label(win, text='Personalize your control center before you launch.',
                  bg='#050817', fg='#91A1CC', font=('Segoe UI', 8)).pack(pady=(0, 15))
 
-        grid = tk.Frame(win, bg='#050817')
-        grid.pack(fill='both', expand=True, padx=30)
+        shell = tk.Frame(win, bg='#050817')
+        shell.pack(fill='both', expand=True, padx=18, pady=(0, 4))
+        theme_canvas = tk.Canvas(shell, bg='#050817', highlightthickness=0, bd=0)
+        theme_scroll = ttk.Scrollbar(shell, orient='vertical', command=theme_canvas.yview)
+        theme_canvas.configure(yscrollcommand=theme_scroll.set)
+        theme_scroll.pack(side='right', fill='y')
+        theme_canvas.pack(side='left', fill='both', expand=True)
+        grid = tk.Frame(theme_canvas, bg='#050817')
+        grid_window = theme_canvas.create_window((0, 0), window=grid, anchor='nw')
+        grid.bind('<Configure>', lambda e: theme_canvas.configure(scrollregion=theme_canvas.bbox('all')))
+        theme_canvas.bind('<Configure>', lambda e: theme_canvas.itemconfigure(grid_window, width=e.width))
+        theme_canvas.bind_all('<MouseWheel>', lambda e: theme_canvas.yview_scroll(int(-1 * (e.delta / 120)), 'units'))
 
         for i, (name, (icon, label, accent, card_bg, panel_bg)) in enumerate(themes.items()):
             card = tk.Frame(
@@ -1164,6 +1192,8 @@ def launch_app():
 
         for col in range(2):
             grid.grid_columnconfigure(col, weight=1)
+        grid.grid_columnconfigure(0, uniform='theme_columns')
+        grid.grid_columnconfigure(1, uniform='theme_columns')
 
         tk.Button(win, text='DONE', command=win.destroy,
                   bg='#14204D', fg='#F4F7FF', activebackground='#263C82',
