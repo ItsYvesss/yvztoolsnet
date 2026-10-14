@@ -319,6 +319,7 @@ class App(tk.Tk):
         list_frame.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
         canvas.bind('<Configure>', lambda e: canvas.itemconfigure(window_id, width=e.width))
         canvas.bind_all('<MouseWheel>', lambda e: canvas.yview_scroll(int(-1 * (e.delta / 120)), 'units'))
+        win.bind('<Destroy>', lambda e: win.unbind_all('<MouseWheel>') if e.widget is win else None)
         for name in self.themes:
             t = self.themes[name]
             card = tk.Frame(list_frame, bg=t['PANEL'], highlightthickness=1,
@@ -1168,6 +1169,7 @@ def launch_app():
         grid.bind('<Configure>', lambda e: theme_canvas.configure(scrollregion=theme_canvas.bbox('all')))
         theme_canvas.bind('<Configure>', lambda e: theme_canvas.itemconfigure(grid_window, width=e.width))
         theme_canvas.bind_all('<MouseWheel>', lambda e: theme_canvas.yview_scroll(int(-1 * (e.delta / 120)), 'units'))
+        win.bind('<Destroy>', lambda e: win.unbind_all('<MouseWheel>') if e.widget is win else None)
 
         for i, (name, (icon, label, accent, card_bg, panel_bg)) in enumerate(themes.items()):
             card = tk.Frame(
