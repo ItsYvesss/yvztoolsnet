@@ -1,4 +1,4 @@
-"""YVZTools v4.1 installer; installs the latest stable app and updater."""
+"""YVZTools v4.2 installer; installs the latest stable app and updater."""
 import os
 import sys
 import json
@@ -17,7 +17,7 @@ except ImportError:
 
 GITHUB_REPO = "ItsYvesss/yvztoolsnet"
 API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
-INSTALLER_VERSION = "4.1.0"
+INSTALLER_VERSION = "4.2.0"
 APP_NAME = "YVZNETMATH.exe"
 UPDATER_NAME = "YVZUPDATER.exe"
 
@@ -81,7 +81,7 @@ class Installer(tk.Tk):
         super().__init__()
         # Use a normal Windows window: native title bar, working X, taskbar entry,
         # Alt+Tab support, and standard Windows window management.
-        self.title("YVZTools Installer v4.1")
+        self.title("YVZTools Installer v4.2")
         self.resizable(False, False)
         self.configure(bg=BG)
         try:
