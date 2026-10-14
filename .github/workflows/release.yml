@@ -2,6 +2,7 @@ name: Build and release YVZTools
 
 on:
   push:
+    branches: [main]
     tags: ['v*']
   workflow_dispatch:
 
@@ -24,22 +25,27 @@ jobs:
           $versionLine = Select-String -Path version.py -Pattern '^APP_VERSION\s*=\s*"([^"]+)"'
           if (-not $versionLine) { throw "APP_VERSION is missing from version.py." }
           $appVersion = $versionLine.Matches[0].Groups[1].Value
+          $appParts = $appVersion.Split('.')
+          if ($appParts.Length -lt 2) { throw "APP_VERSION must use major.minor.patch format." }
           if ($env:GITHUB_REF_TYPE -eq 'tag') {
             $tagVersion = $env:GITHUB_REF_NAME.TrimStart('v')
+            $tagParts = $tagVersion.Split('.')
+            if ($tagParts[0] -ne $appParts[0] -or $tagParts[1] -ne $appParts[1]) {
+              throw "Release tag $($env:GITHUB_REF_NAME) does not match APP_VERSION $appVersion."
+            }
+            $releaseTag = $env:GITHUB_REF_NAME
           } else {
-            $parts = $appVersion.Split('.')
-            $tagVersion = "$($parts[0]).$($parts[1])"
+            $releaseTag = "v$($appParts[0]).$($appParts[1])"
           }
-          $appParts = $appVersion.Split('.')
-          $tagParts = $tagVersion.Split('.')
-          if ($appParts[0] -ne $tagParts[0] -or $appParts[1] -ne $tagParts[1]) { throw "Release tag does not match version.py ($appVersion)." }
-          "RELEASE_TAG=v$tagVersion" >> $env:GITHUB_ENV
+          "RELEASE_TAG=$releaseTag" >> $env:GITHUB_ENV
 
       - name: Install dependencies
         shell: pwsh
         run: |
           python -m pip install --upgrade pip
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -m pip install -r requirements.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Build YVZNETMATH.exe
         shell: pwsh
