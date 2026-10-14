@@ -14,17 +14,17 @@ from tkinter import ttk, messagebox
 from pathlib import Path
 
 GITHUB_REPO = "ItsYvesss/yvztoolsnet"
-RELEASE_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/tags/v4.1"
+RELEASE_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/tags/v4.2"
 APP_NAME = "YVZNETMATH.exe"
 APP_DIR = Path(sys.executable if getattr(sys, "frozen", False) else __file__).resolve().parent
 APP_EXE = APP_DIR / APP_NAME
 VERSION_FILE = APP_DIR / "version.txt"
-UPDATER_VERSION = "4.1.0"
+UPDATER_VERSION = "4.2.0"
 USER_AGENT = f"YVZTOOLS-Updater/{UPDATER_VERSION}"
 
 
 def version_tuple(value):
-    """Parse v4.1, 4.1.0, or older version tags into comparable numeric tuples."""
+    """Parse v4.2, 4.2.0, or older version tags into comparable numeric tuples."""
     found = re.findall(r"\d+", str(value or ""))
     return tuple(int(part) for part in found) if found else (0,)
 
@@ -142,7 +142,7 @@ class Updater(tk.Tk):
                         font=("Segoe UI", 26, "bold"))
         hero.create_text(12, 51, anchor="nw", text="UPDATE CONTROL CENTER", fill="#58D9FF",
                         font=("Segoe UI", 10, "bold"))
-        hero.create_text(12, 76, anchor="nw", text="OFFICIAL STABLE CHANNEL  •  RELEASE v4.1",
+        hero.create_text(12, 76, anchor="nw", text="OFFICIAL STABLE CHANNEL  •  RELEASE v4.2",
                         fill="#AAB9E8", font=("Segoe UI", 9, "bold"))
         hero.create_line(12, 119, 705, 119, fill="#243A70", width=1)
         hero.create_line(12, 119, 190, 119, fill="#4FE6FF", width=2)
@@ -240,7 +240,7 @@ class Updater(tk.Tk):
         self.detail_var.set("Reading the latest stable release from GitHub.")
         self.progress.configure(value=0, mode="indeterminate")
         self.progress.start(10)
-        self.progress_label.configure(text="Searching the official v4.1 release…")
+        self.progress_label.configure(text="Searching the official v4.2 release…")
         self.worker = threading.Thread(target=self.check_worker, daemon=True)
         self.worker.start()
 
