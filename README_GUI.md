@@ -1,4 +1,4 @@
-# YVZTOOLS NetMath Space - v4.1
+# YVZTOOLS NetMath Space - v4.2
 
 ## Install / update (users)
 1. Download the installer from the [latest stable release](https://github.com/ItsYvesss/yvztoolsnet/releases/latest/download/YVZTOOLS-INSTALLER.exe), or download both `YVZNETMATH.exe` and `YVZUPDATER.exe` from the release assets.
@@ -11,5 +11,5 @@ A missing `version.txt` is treated as an old installation, so the updater offers
 
 ## Publish a new version (you)
 1. Update `APP_VERSION` and `DISPLAY_VERSION` in `version.py`, and update the Windows metadata files.
-2. Create a matching tag (for example, `v4.1` for `APP_VERSION = "4.1.0"`) and push it.
+2. Create a matching tag (for example, `v4.2` for `APP_VERSION = "4.2.0"`) and push it.
 3. The tag workflow builds the app, updater, and installer, then attaches all three EXEs to the release.
