@@ -70,11 +70,25 @@ jobs:
             Write-Host "$file — $((Get-Item -LiteralPath $file).Length) bytes"
           }
 
+      - name: Check whether release already exists
+        id: existing_release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view "$env:RELEASE_TAG" --repo "$env:GITHUB_REPOSITORY" *> $null
+          if ($LASTEXITCODE -eq 0) {
+            "skip=true" >> $env:GITHUB_OUTPUT
+          } else {
+            "skip=false" >> $env:GITHUB_OUTPUT
+          }
+
       - name: Publish release assets
+        if: steps.existing_release.outputs.skip != 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.RELEASE_TAG }}
-          name: YVZTools ${{ github.ref_name }}
+          name: YVZTools ${{ env.RELEASE_TAG }}
           generate_release_notes: true
           files: |
             dist/YVZNETMATH.exe
