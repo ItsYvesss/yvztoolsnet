@@ -214,7 +214,6 @@ class App(tk.Tk):
         self.last_tab = None
         self.chrome_ok = False
         self.busy = False
-        self.automode_pending = False
         self._status_check_running = False
         self.theme_name = core.load_config().get('theme', 'dark')
         self.themes = {
@@ -435,8 +434,6 @@ class App(tk.Tk):
         self.btn_y.pack(fill='x', padx=14, pady=4)
         self.btn_a = RoundedButton(left, '③  SOLVE WITH GEMINI', self.solve, PURPLE, CYAN, height=42)
         self.btn_a.pack(fill='x', padx=14, pady=4)
-        self.btn_automode = RoundedButton(left, '⚡  AUTO MODE [P]', self.start_automode, '#126A72', CYAN, height=42)
-        self.btn_automode.pack(fill='x', padx=14, pady=4)
 
         # Compact status card
         status = tk.Frame(left, bg=PANEL2, highlightbackground=border, highlightthickness=1)
@@ -459,7 +456,7 @@ class App(tk.Tk):
                  font=('Segoe UI Semibold', 8)).pack(anchor='w', padx=16, pady=(15, 4))
         keys = tk.Frame(left, bg=PANEL)
         keys.pack(fill='x', padx=14)
-        key_items = [('P','Auto scan + solve + copy answer'), ('1','Auto scan + solve'), ('R','Chrome'), ('Y','Scan only'), ('A','Solve scanned'), ('2-4','Presets'), ('T','Theme'), ('X','Exit')]
+        key_items = [('1','Auto scan + solve'), ('R','Chrome'), ('Y','Scan only'), ('A','Solve scanned'), ('2-4','Presets'), ('T','Theme'), ('X','Exit')]
         for i, (key, label) in enumerate(key_items):
             row = tk.Frame(keys, bg=PANEL)
             row.pack(fill='x', pady=1)
@@ -473,8 +470,6 @@ class App(tk.Tk):
         self.bind('<a>', lambda e: self.solve())
         self.bind('<x>', lambda e: self.on_exit())
         self.bind('<KeyPress-1>', lambda e: self.scan(auto_solve=True))
-        self.bind('<p>', lambda e: self.start_automode())
-        self.bind('<P>', lambda e: self.start_automode())
         self.bind('<c>', lambda e: self.copy_answer())
         self.bind('<C>', lambda e: self.copy_answer())
         self.bind('<KeyPress-2>', lambda e: self.quick_preset('2'))
@@ -554,7 +549,7 @@ class App(tk.Tk):
         self.log.pack(fill='both', expand=True, padx=12, pady=(0, 5))
         self.log.configure(state='disabled')
 
-        self.write_log(f'{DISPLAY_VERSION} ready • P Auto Mode (scan + solve + copy) • C Copy answer • R Chrome • Y Scan • A Solve • 1-4 Presets • T Theme')
+        self.write_log(f'{DISPLAY_VERSION} ready • C Copy answer • R Chrome • Y Scan • A Solve • 1-4 Presets • T Theme')
 
     def write_log(self, text):
         self.log.configure(state='normal')
@@ -849,20 +844,19 @@ class App(tk.Tk):
         if self.busy:
             return
         self.busy = True
-        for b in (self.btn_r, self.btn_y, self.btn_a, self.btn_automode): b.state(['disabled'])
+        for b in (self.btn_r, self.btn_y, self.btn_a): b.state(['disabled'])
         threading.Thread(target=self._bg_wrap, args=(fn,), daemon=True).start()
 
     def _bg_wrap(self, fn):
         try:
             fn()
         except Exception as e:
-            self.automode_pending = False
             self.after(0, self.fail_ai_progress)
             self.after(0, lambda: self.write_log(f'Error: {e}'))
             self.after(0, lambda: messagebox.showerror('YVZTOOLS Error', str(e)))
         finally:
             self.busy = False
-            self.after(0, lambda: [b.state(['!disabled']) for b in (self.btn_r, self.btn_y, self.btn_a, self.btn_automode)])
+            self.after(0, lambda: [b.state(['!disabled']) for b in (self.btn_r, self.btn_y, self.btn_a)])
 
     def start_chrome(self):
         def work():
@@ -968,25 +962,6 @@ class App(tk.Tk):
                 self.after(0, lambda: self.write_log('HOTKEY 1 • Scan complete; sending question to Gemini with saved-key + screenshot preset.'))
                 self.do_solve('1')
         self.run_bg(work)
-
-    def start_automode(self):
-        """Scan and solve the current question, then copy the final answer for user review."""
-        if self.busy:
-            return
-        self.automode_pending = True
-        self.write_log('AUTO MODE • Scanning the current question and solving with preset 1.')
-        self.set_solution_status('AUTO MODE • SCANNING')
-        self.scan(auto_solve=True)
-
-    def _automode_copy_ready(self):
-        """Copy the generated final answer; the user reviews and submits it manually."""
-        if not self.automode_pending:
-            return
-        self.automode_pending = False
-        self.copy_answer()
-        self.write_log('AUTO MODE READY • Answer copied. Review it, paste/submit it on NetMath, then press P for the next question.')
-        self.set_solution_status('AUTO MODE • READY FOR YOUR REVIEW')
-        self.ai_eta.config(text='Press P for next')
 
     def solve(self):
         if not self.last_extracted:
@@ -1188,8 +1163,6 @@ class App(tk.Tk):
         self.after(0, lambda: self.set_text(self.solution, text))
         self.after(0, lambda: self.write_log('Gemini solution received.'))
         self.finish_ai_progress()
-        if self.automode_pending:
-            self.after(0, self._automode_copy_ready)
 
     def on_exit(self):
         if messagebox.askyesno('Exit YVZTOOLS', 'Close the app?'):
