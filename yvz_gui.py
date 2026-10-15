@@ -676,53 +676,73 @@ class App(tk.Tk):
 
 
     def draw_ai_progress(self):
+        """Draw the live estimated request progress with a bright moving head."""
         try:
             c = self.ai_progress
             c.delete('all')
             w = max(c.winfo_width(), 100)
             h = max(c.winfo_height(), 7)
             track = self.themes[self.theme_name]['BORDER']
-            c.create_rectangle(0, 1, w, h-1, fill=track, outline='')
+            accent = BLUE if self.theme_name == 'dark' else PURPLE
+            c.create_rectangle(0, 1, w, h - 1, fill=track, outline='')
             if self.ai_progress_mode == 'idle':
                 return
+
+            fill_w = int(w * max(0, min(100, self.ai_progress_value)) / 100)
+            if fill_w > 0:
+                c.create_rectangle(0, 1, fill_w, h - 1, fill=accent, outline='')
+                # A moving cyan highlight makes the fill feel live rather than static.
+                glow_width = min(34, max(10, fill_w))
+                head_x = max(0, fill_w - glow_width + (self.ai_progress_phase % 9))
+                head_x = min(head_x, max(0, fill_w - 2))
+                c.create_rectangle(head_x, 1, min(fill_w, head_x + glow_width), h - 1,
+                                   fill=CYAN, outline='')
             if self.ai_progress_mode == 'waiting':
-                # Dynamic indeterminate glow while Gemini is thinking.
-                span = max(34, int(w * .18))
-                x = int((self.ai_progress_phase % 100) / 100 * (w + span) - span)
-                c.create_rectangle(max(0,x), 1, min(w,x+span), h-1, fill=CYAN, outline='')
-            else:
-                fill_w = int(w * max(0, min(100, self.ai_progress_value)) / 100)
-                c.create_rectangle(0, 1, fill_w, h-1, fill=BLUE if self.theme_name == 'dark' else PURPLE, outline='')
-                if fill_w > 5:
-                    c.create_rectangle(max(0, fill_w-35), 1, fill_w, h-1, fill=CYAN, outline='')
+                # Subtle shine moving along the filled section while the API responds.
+                shine_x = int((self.ai_progress_phase * 5) % max(1, fill_w + 1))
+                if fill_w > 12 and shine_x < fill_w:
+                    c.create_rectangle(max(0, shine_x - 2), 1, min(fill_w, shine_x + 3),
+                                       h - 1, fill='#E8FCFF', outline='')
         except Exception:
             pass
 
     def start_ai_progress(self):
         self.ai_progress_mode = 'waiting'
-        self.ai_progress_value = 18
+        self.ai_progress_value = 12
         self.ai_progress_phase = 0
-        self.set_solution_status('CONNECTING TO GEMINI…')
-        self.ai_eta.config(text='Response coming soon')
+        self.set_solution_status('PREPARING GEMINI REQUEST…')
+        self.ai_eta.config(text='EST. 12% • Preparing request…')
+        self.draw_ai_progress()
         self._tick_ai_progress()
 
     def _tick_ai_progress(self):
         if self.ai_progress_mode == 'idle':
+            self.ai_progress_after = None
             return
-        self.ai_progress_phase = (self.ai_progress_phase + 3) % 100
+        self.ai_progress_phase = (self.ai_progress_phase + 1) % 100
         if self.ai_progress_mode == 'waiting':
-            self.ai_progress_value = min(92, self.ai_progress_value + 0.35)
-            self.draw_ai_progress()
-            self.ai_progress_after = self.after(35, self._tick_ai_progress)
+            # This is an estimated activity indicator, not byte-level network progress:
+            # Gemini does not expose upload/processing percentages for this request.
+            self.ai_progress_value = min(92, self.ai_progress_value + 0.55)
+            self.ai_eta.config(text=f'EST. {int(self.ai_progress_value)}% • Sending / waiting…')
+        self.draw_ai_progress()
+        self.ai_progress_after = self.after(40, self._tick_ai_progress)
 
     def set_ai_stage(self, text, percent=None, eta=''):
         def update():
-            self.ai_progress_mode = 'determinate'
+            is_request_stage = ('SENDING TO GEMINI' in text.upper()
+                                or 'WAITING FOR RESPONSE' in eta.upper())
+            self.ai_progress_mode = 'waiting' if is_request_stage else 'determinate'
             if percent is not None:
                 self.ai_progress_value = percent
             self.set_solution_status(text)
-            self.ai_eta.config(text=eta)
+            if is_request_stage:
+                self.ai_eta.config(text=f'EST. {int(self.ai_progress_value)}% • Request in progress…')
+            else:
+                self.ai_eta.config(text=eta or (f'{int(self.ai_progress_value)}%' if percent is not None else ''))
             self.draw_ai_progress()
+            if self.ai_progress_after is None and self.ai_progress_mode != 'idle':
+                self.ai_progress_after = self.after(40, self._tick_ai_progress)
         self.after(0, update)
 
     def finish_ai_progress(self):
@@ -730,14 +750,22 @@ class App(tk.Tk):
             self.ai_progress_mode = 'determinate'
             self.ai_progress_value = 100
             self.set_solution_status('GEMINI RESPONSE READY')
-            self.ai_eta.config(text='Done ✓')
+            self.ai_eta.config(text='100% • Done ✓')
             self.draw_ai_progress()
-            self.after(550, self.reset_ai_progress)
+            self.after(700, self.reset_ai_progress)
         self.after(0, update)
+
+    def fail_ai_progress(self):
+        """Stop the animation on request failure and leave a useful status."""
+        self.ai_progress_mode = 'determinate'
+        self.ai_eta.config(text=f'{int(self.ai_progress_value)}% • Failed')
+        self.set_solution_status('REQUEST FAILED')
+        self.draw_ai_progress()
 
     def reset_ai_progress(self):
         self.ai_progress_mode = 'idle'
         self.ai_progress_value = 0
+        self.ai_progress_after = None
         self.ai_eta.config(text='')
         self.set_solution_status('WAITING')
         self.draw_ai_progress()
@@ -780,11 +808,8 @@ class App(tk.Tk):
         try:
             fn()
         except Exception as e:
-            self.after(0, lambda: self.ai_progress_mode if False else None)
-            self.after(0, lambda: self.set_solution_status('REQUEST FAILED'))
-            self.after(0, lambda: self.ai_eta.config(text='Check API / connection'))
+            self.after(0, self.fail_ai_progress)
             self.after(0, lambda: self.write_log(f'Error: {e}'))
-            self.after(0, lambda: self.draw_ai_progress())
             self.after(0, lambda: messagebox.showerror('YVZTOOLS Error', str(e)))
         finally:
             self.busy = False
