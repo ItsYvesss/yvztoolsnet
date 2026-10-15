@@ -449,6 +449,8 @@ class App(tk.Tk):
         self.bind('<a>', lambda e: self.solve())
         self.bind('<x>', lambda e: self.on_exit())
         self.bind('<KeyPress-1>', lambda e: self.scan(auto_solve=True))
+        self.bind('<c>', lambda e: self.copy_answer())
+        self.bind('<C>', lambda e: self.copy_answer())
         self.bind('<KeyPress-2>', lambda e: self.quick_preset('2'))
         self.bind('<KeyPress-3>', lambda e: self.quick_preset('3'))
         self.bind('<KeyPress-4>', lambda e: self.quick_preset('4'))
@@ -511,6 +513,11 @@ class App(tk.Tk):
         self.solution.pack(fill='both', expand=True, padx=12, pady=(0, 10))
         self.solution.configure(state='disabled')
 
+        # Copy only the final ANSWER section, never the AI explanation.
+        self.copy_answer_button = RoundedButton(solhead, 'COPY ANSWER [C]', self.copy_answer,
+                                                BLUE, CYAN, height=27, radius=10, width=142)
+        self.copy_answer_button.pack(side='right')
+
         # Activity footer
         logcard = tk.Frame(right, bg=PANEL2, highlightbackground=border, highlightthickness=1)
         logcard.pack(fill='x', padx=14, pady=(0, 14))
@@ -521,7 +528,7 @@ class App(tk.Tk):
         self.log.pack(fill='both', expand=True, padx=12, pady=(0, 5))
         self.log.configure(state='disabled')
 
-        self.write_log(f'{DISPLAY_VERSION} ready • R Chrome • Y Scan • A Solve • 1-4 Presets • T Theme')
+        self.write_log(f'{DISPLAY_VERSION} ready • C Copy answer • R Chrome • Y Scan • A Solve • 1-4 Presets • T Theme')
 
     def write_log(self, text):
         self.log.configure(state='normal')
@@ -547,6 +554,34 @@ class App(tk.Tk):
                     widget.tag_add('heading', pos, end)
                     start = end
         widget.configure(state='disabled')
+
+    def copy_answer(self):
+        """Copy only the final answer section from Gemini's formatted response."""
+        try:
+            response = self.solution.get('1.0', 'end-1c').strip()
+        except tk.TclError:
+            return
+
+        import re
+        match = re.search(
+            r'(?is)(?:^|\\n)\\s*ANSWER\\s*:\\s*(.*?)(?=\\n\\s*(?:QUESTION|SOLUTION)\\s*:|\\Z)',
+            response
+        )
+        if not match or not match.group(1).strip():
+            self.write_log('Copy answer skipped • no final ANSWER section found.')
+            messagebox.showinfo(
+                'Copy Answer',
+                'No clearly labelled ANSWER section was found. Generate the solution again, then try C.'
+            )
+            return
+
+        answer = match.group(1).strip()
+        self.clipboard_clear()
+        self.clipboard_append(answer)
+        self.update_idletasks()
+        self.write_log('Final answer copied to clipboard.')
+        self.set_solution_status('ANSWER COPIED ✓')
+        self.ai_eta.config(text='Copied')
 
     def set_solution_status(self, text):
         try:
