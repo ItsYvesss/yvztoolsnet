@@ -435,7 +435,7 @@ class App(tk.Tk):
                  font=('Segoe UI Semibold', 8)).pack(anchor='w', padx=16, pady=(15, 4))
         keys = tk.Frame(left, bg=PANEL)
         keys.pack(fill='x', padx=14)
-        key_items = [('R','Chrome'), ('Y','Scan'), ('A','Solve'), ('1-4','Presets'), ('T','Theme'), ('X','Exit')]
+        key_items = [('1','Auto scan + solve'), ('R','Chrome'), ('Y','Scan only'), ('A','Solve scanned'), ('2-4','Presets'), ('T','Theme'), ('X','Exit')]
         for i, (key, label) in enumerate(key_items):
             row = tk.Frame(keys, bg=PANEL)
             row.pack(fill='x', pady=1)
@@ -448,7 +448,7 @@ class App(tk.Tk):
         self.bind('<y>', lambda e: self.scan())
         self.bind('<a>', lambda e: self.solve())
         self.bind('<x>', lambda e: self.on_exit())
-        self.bind('<KeyPress-1>', lambda e: self.quick_preset('1'))
+        self.bind('<KeyPress-1>', lambda e: self.scan(auto_solve=True))
         self.bind('<KeyPress-2>', lambda e: self.quick_preset('2'))
         self.bind('<KeyPress-3>', lambda e: self.quick_preset('3'))
         self.bind('<KeyPress-4>', lambda e: self.quick_preset('4'))
@@ -739,7 +739,8 @@ class App(tk.Tk):
         self.after(0, show); ev.wait()
         return candidates[result['idx'] or 0]
 
-    def scan(self):
+    def scan(self, auto_solve=False):
+        """Scan the current question; key 1 also sends it to Gemini for a solution."""
         def work():
             tabs = core.list_tabs()
             if tabs is None:
@@ -767,6 +768,11 @@ class App(tk.Tk):
             stamp = time.strftime('%H:%M:%S')
             self.after(0, lambda: self.set_solution_status('QUESTION UPDATED • ' + stamp))
             self.after(0, lambda: self.write_log(f'[{stamp}] LIVE FEED • Question updated.'))
+            if auto_solve:
+                if not (data.get('questionText') or '').strip() and not (data.get('choices') or []):
+                    raise RuntimeError('The scan found no readable question text. Try Y to scan again or check whether the question is an image/interactive widget.')
+                self.after(0, lambda: self.write_log('HOTKEY 1 • Scan complete; sending question to Gemini with saved-key + screenshot preset.'))
+                self.do_solve('1')
         self.run_bg(work)
 
     def solve(self):
