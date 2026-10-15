@@ -1,3 +1,3 @@
 """Single source of truth for YVZTools application version."""
-APP_VERSION = "4.2.0"
-DISPLAY_VERSION = "v4.2"
+APP_VERSION = "4.3.0"
+DISPLAY_VERSION = "v4.3"
