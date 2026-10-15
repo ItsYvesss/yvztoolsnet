@@ -194,7 +194,7 @@ class App(tk.Tk):
         super().__init__()
         self.title(f'{APP_NAME} {DISPLAY_VERSION}')
         self.geometry('1100x700')
-        self.minsize(780, 600)
+        self.minsize(680, 520)
         self.resizable(True, True)
         self._fullscreen = False
         self.bind('<F11>', self._toggle_fullscreen)
@@ -262,8 +262,27 @@ class App(tk.Tk):
         self._apply_theme_constants()
         self._build_styles()
         self._build_ui()
+        self.bind('<Configure>', self._on_window_resize, add='+')
         self.refresh_status()
         # refresh_status schedules its own lightweight background polling.
+
+    def _on_window_resize(self, event=None):
+        # Reflow the main control deck as the user resizes the window.
+        if event is not None and event.widget is not self:
+            return
+        width = max(self.winfo_width(), 680)
+        compact = width < 900
+        side_pad = 12 if compact else 26
+        gap = 6 if compact else 8
+        bottom_pad = 10 if compact else 20
+        try:
+            self.grid_columnconfigure(0, weight=2 if compact else 1, minsize=205 if compact else 245, uniform='cols')
+            self.grid_columnconfigure(1, weight=3, minsize=320 if compact else 390, uniform='cols')
+            self.header_frame.grid_configure(padx=side_pad)
+            self.left_frame.grid_configure(padx=(side_pad, gap), pady=(0, bottom_pad))
+            self.right_frame.grid_configure(padx=(gap, side_pad), pady=(0, bottom_pad))
+        except (AttributeError, tk.TclError):
+            pass
 
     def _toggle_fullscreen(self, event=None, force=None):
         self._fullscreen = (not self._fullscreen) if force is None else force
@@ -361,6 +380,7 @@ class App(tk.Tk):
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=1)
         top.grid(row=0, column=0, columnspan=2, sticky='ew', padx=26, pady=(14, 6))
+        self.header_frame = top
         title_row = tk.Frame(top, bg=BG)
         title_row.pack(fill='x')
         tk.Label(title_row, text='YVZTOOLS', bg=BG, fg=TEXT,
@@ -375,9 +395,11 @@ class App(tk.Tk):
         # Main two-column layout
         left = tk.Frame(self, bg=PANEL, highlightbackground=border, highlightthickness=1)
         left.grid(row=1, column=0, sticky='nsew', padx=(26, 8), pady=(0, 20))
+        self.left_frame = left
         left.pack_propagate(False)
         right = tk.Frame(self, bg=PANEL, highlightbackground=border, highlightthickness=1)
         right.grid(row=1, column=1, sticky='nsew', padx=(8, 26), pady=(0, 20))
+        self.right_frame = right
 
         # Left: control deck
         tk.Label(left, text='COMMAND CENTER', bg=PANEL, fg=TEXT,
@@ -499,7 +521,7 @@ class App(tk.Tk):
         self.log.pack(fill='both', expand=True, padx=12, pady=(0, 5))
         self.log.configure(state='disabled')
 
-        self.write_log('V4.0 ready • R Chrome • Y Scan • A Solve • 1-4 Presets • T Theme')
+        self.write_log(f'{DISPLAY_VERSION} ready • R Chrome • Y Scan • A Solve • 1-4 Presets • T Theme')
 
     def write_log(self, text):
         self.log.configure(state='normal')
