@@ -6,6 +6,9 @@ import threading
 import subprocess
 import traceback
 import importlib.util
+import urllib.request
+import urllib.error
+import re
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 from pathlib import Path
@@ -265,6 +268,7 @@ class App(tk.Tk):
         self.bind('<Configure>', self._on_window_resize, add='+')
         self.refresh_status()
         # refresh_status schedules its own lightweight background polling.
+        self.check_update_status()
 
     def _on_window_resize(self, event=None):
         # Reflow the main control deck as the user resizes the window.
@@ -387,8 +391,19 @@ class App(tk.Tk):
                  font=('Segoe UI Black', 22)).pack(side='left')
         tk.Label(title_row, text='  NETMATH SPACE', bg=BG, fg=BLUE,
                  font=('Segoe UI Semibold', 11)).pack(side='left', pady=(7, 0))
-        tk.Label(title_row, text=DISPLAY_VERSION.upper(), bg=PANEL2, fg=CYAN,
-                 font=('Segoe UI Semibold', 8), padx=10, pady=4).pack(side='right', pady=5)
+        # Version and update status stay in the existing header.
+        update_cluster = tk.Frame(title_row, bg=BG)
+        update_cluster.pack(side='right', pady=3)
+        tk.Label(update_cluster, text=DISPLAY_VERSION.upper(), bg=PANEL2, fg=CYAN,
+                 font=('Segoe UI Semibold', 8), padx=10, pady=4).pack(side='left', padx=(0, 6))
+        self.update_status_box = tk.Label(update_cluster, text='CHECKING UPDATES…',
+                 bg=PANEL2, fg=MUTED, font=('Segoe UI Semibold', 7), padx=8, pady=4,
+                 highlightthickness=1, highlightbackground='#263C82')
+        self.update_status_box.pack(side='left')
+        self.update_button = RoundedButton(update_cluster, 'UPDATE', self.open_updater,
+                 BLUE, CYAN, height=25, radius=8, width=88)
+        self.update_button.pack(side='left', padx=(6, 0))
+        self.update_button.pack_forget()
         tk.Label(top, text='Smart homework control center  •  Chrome + Gemini  •  scan → solve',
                  bg=BG, fg=MUTED, font=('Segoe UI', 8)).pack(anchor='w', pady=(0, 3))
 
@@ -562,9 +577,10 @@ class App(tk.Tk):
         except tk.TclError:
             return
 
-        import re
+        # Normalize both real line breaks and literal backslash-n sequences from AI output.
+        response = response.replace('\\r\\n', '\n').replace('\\r', '\n').replace('\\n', '\n')
         match = re.search(
-            r'(?is)(?:^|\\n)\\s*ANSWER\\s*:\\s*(.*?)(?=\\n\\s*(?:QUESTION|SOLUTION)\\s*:|\\Z)',
+            r'(?is)(?:^|\n)\s*(?:[*_]{0,2})\s*(?:FINAL\s+)?ANSWER\s*(?:[*_]{0,2})\s*:\s*(.*?)(?=\n\s*(?:(?:[*_]{0,2})\s*(?:QUESTION|SOLUTION)\s*(?:[*_]{0,2})\s*:|#{1,6}\s)|\Z)',
             response
         )
         if not match or not match.group(1).strip():
@@ -582,6 +598,75 @@ class App(tk.Tk):
         self.write_log('Final answer copied to clipboard.')
         self.set_solution_status('ANSWER COPIED ✓')
         self.ai_eta.config(text='Copied')
+
+    @staticmethod
+    def _version_parts(value):
+        parts = [int(v) for v in re.findall(r'\d+', str(value or ''))]
+        return tuple((parts + [0, 0, 0])[:3]) if parts else (0, 0, 0)
+
+    def check_update_status(self):
+        """Check the latest public GitHub release without blocking the UI."""
+        def worker():
+            try:
+                req = urllib.request.Request(
+                    'https://api.github.com/repos/ItsYvesss/yvztoolsnet/releases/latest',
+                    headers={'Accept': 'application/vnd.github+json',
+                             'User-Agent': 'YVZTools-Version-Check'}
+                )
+                with urllib.request.urlopen(req, timeout=10) as response:
+                    release = json.loads(response.read().decode('utf-8'))
+                latest = str(release.get('tag_name') or release.get('name') or '')
+                if not latest:
+                    raise ValueError('Latest release did not include a version tag.')
+                is_outdated = self._version_parts(latest) > self._version_parts(APP_VERSION)
+                self.after(0, lambda: self._show_update_status(latest, is_outdated))
+            except Exception:
+                self.after(0, lambda: self._show_update_check_failed())
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _show_update_status(self, latest, is_outdated):
+        try:
+            if is_outdated:
+                self.update_status_box.configure(
+                    text=f'OUTDATED • {latest.upper()}',
+                    bg=PANEL2, fg=RED, highlightbackground=RED
+                )
+                self.update_button.pack(side='left', padx=(6, 0))
+            else:
+                self.update_status_box.configure(
+                    text='UP TO DATE ✓', bg=PANEL2, fg=GREEN,
+                    highlightbackground=GREEN
+                )
+                self.update_button.pack_forget()
+        except tk.TclError:
+            pass
+
+    def _show_update_check_failed(self):
+        try:
+            self.update_status_box.configure(
+                text='UPDATE STATUS UNKNOWN', bg=PANEL2, fg=MUTED,
+                highlightbackground='#263C82'
+            )
+            self.update_button.pack_forget()
+        except tk.TclError:
+            pass
+
+    def open_updater(self):
+        """Launch the bundled updater executable from beside the app."""
+        updater_exe = BASE / 'YVZUPDATER.exe'
+        try:
+            if updater_exe.is_file():
+                subprocess.Popen([str(updater_exe)], cwd=str(BASE))
+                self.write_log('Updater launched.')
+            else:
+                messagebox.showerror(
+                    'Updater Not Found',
+                    'YVZUPDATER.exe was not found beside the app. Reinstall YVZTools using the official installer.'
+                )
+                self.write_log('Updater launch failed • YVZUPDATER.exe missing.')
+        except OSError as exc:
+            messagebox.showerror('Could Not Open Updater', str(exc))
 
     def set_solution_status(self, text):
         try:
