@@ -728,7 +728,30 @@ class App(tk.Tk):
             in_answer = False
             for line in text.splitlines(keepends=True):
                 stripped = line.strip()
-                normalized = re.sub(r'^[#*_\s]+|[#*_\s]+
+                normalized = re.sub(r'^[#*_\s]+|[#*_\s]+$', '', stripped).strip().rstrip(':').strip().upper()
+                is_answer = bool(re.match(r'^(?:FINAL\s+)?ANSWER$', normalized))
+                is_heading = bool(re.match(r'^(?:QUESTION|SOLUTION|EXPLANATION|WORKING|STEPS?|STEP\s*\d+)$', normalized))
+                if is_answer:
+                    widget.tag_add('answer_heading', f'1.0+{offset}c', f'1.0+{offset + len(line.rstrip())}c')
+                    answer_start = offset + len(line)
+                    in_answer = True
+                elif is_heading:
+                    widget.tag_add('section_heading', f'1.0+{offset}c', f'1.0+{offset + len(line.rstrip())}c')
+                    if in_answer:
+                        answer_end = offset
+                        in_answer = False
+                elif re.search(r'(?:=|≠|≤|≥|→|≈)', stripped):
+                    widget.tag_add('equation', f'1.0+{offset}c', f'1.0+{offset + len(line.rstrip())}c')
+                offset += len(line)
+
+            if answer_start is not None:
+                while answer_start < len(text) and text[answer_start:answer_start + 1] in ('\n', '\r', ' ', '\t'):
+                    answer_start += 1
+                if answer_end > answer_start:
+                    widget.tag_add('final_answer', f'1.0+{answer_start}c', f'1.0+{answer_end}c')
+
+        widget.configure(state='disabled')
+
     def copy_answer(self):
         """Copy only the final answer section from Gemini's formatted response."""
         try:
