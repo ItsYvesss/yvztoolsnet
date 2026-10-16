@@ -728,7 +728,7 @@ class App(tk.Tk):
             in_answer = False
             for line in text.splitlines(keepends=True):
                 stripped = line.strip()
-                normalized = re.sub(r'^[#*_\\s]+|[#*_\\s]+
+                normalized = re.sub(r'^[#*_\s]+|[#*_\s]+
     def copy_answer(self):
         """Copy only the final answer section from Gemini's formatted response."""
         try:
