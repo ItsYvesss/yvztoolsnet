@@ -198,8 +198,8 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title(f'{APP_NAME} {DISPLAY_VERSION}')
-        self.geometry('1100x700')
-        self.minsize(680, 520)
+        self.geometry('1180x760')
+        self.minsize(820, 600)
         self.resizable(True, True)
         self._fullscreen = False
         self.bind('<F11>', self._toggle_fullscreen)
@@ -392,14 +392,18 @@ class App(tk.Tk):
         self.grid_columnconfigure(1, weight=3, uniform='cols')
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=1)
-        top.grid(row=0, column=0, columnspan=2, sticky='ew', padx=26, pady=(14, 6))
+        top.grid(row=0, column=0, columnspan=2, sticky='ew', padx=26, pady=(18, 10))
         self.header_frame = top
         title_row = tk.Frame(top, bg=BG)
         title_row.pack(fill='x')
-        tk.Label(title_row, text='YVZTOOLS', bg=BG, fg=TEXT,
-                 font=('Segoe UI Black', 22)).pack(side='left')
-        tk.Label(title_row, text='  NETMATH SPACE', bg=BG, fg=BLUE,
-                 font=('Segoe UI Semibold', 11)).pack(side='left', pady=(7, 0))
+        brand_mark = tk.Frame(title_row, bg=BLUE, width=42, height=42, highlightthickness=1, highlightbackground=CYAN)
+        brand_mark.pack(side='left', padx=(0, 11))
+        brand_mark.pack_propagate(False)
+        tk.Label(brand_mark, text='Y', bg=BLUE, fg='white', font=('Segoe UI Black', 23)).pack(expand=True)
+        brand_text = tk.Frame(title_row, bg=BG)
+        brand_text.pack(side='left', pady=(1, 0))
+        tk.Label(brand_text, text='YVZTOOLS', bg=BG, fg=TEXT, font=('Segoe UI Black', 22)).pack(anchor='w')
+        tk.Label(brand_text, text='NETMATH SPACE  /  DESKTOP CONTROL CENTER', bg=BG, fg=BLUE, font=('Segoe UI Semibold', 8)).pack(anchor='w', pady=(0, 1))
         # Version and update status stay in the existing header.
         update_cluster = tk.Frame(title_row, bg=BG)
         update_cluster.pack(side='right', pady=3)
@@ -413,8 +417,7 @@ class App(tk.Tk):
                  BLUE, CYAN, height=25, radius=8, width=88)
         self.update_button.pack(side='left', padx=(6, 0))
         self.update_button.pack_forget()
-        tk.Label(top, text='Smart homework control center  •  Chrome + Gemini  •  scan → solve',
-                 bg=BG, fg=MUTED, font=('Segoe UI', 8)).pack(anchor='w', pady=(0, 3))
+        tk.Frame(top, bg=self.themes[self.theme_name]['BORDER'], height=1).pack(fill='x', pady=(10, 0))
 
         # Main two-column layout
         left = tk.Frame(self, bg=PANEL, highlightbackground=border, highlightthickness=1)
@@ -426,23 +429,22 @@ class App(tk.Tk):
         self.right_frame = right
 
         # Left: control deck
-        tk.Label(left, text='COMMAND CENTER', bg=PANEL, fg=TEXT,
-                 font=('Segoe UI Semibold', 10)).pack(anchor='w', padx=16, pady=(14, 2))
-        tk.Label(left, text='Fast workflow • one click per step', bg=PANEL, fg=MUTED,
-                 font=('Segoe UI', 8)).pack(anchor='w', padx=16, pady=(0, 10))
+        tk.Label(left, text='YOUR WORKSPACE', bg=PANEL, fg=BLUE, font=('Segoe UI Semibold', 8)).pack(anchor='w', padx=16, pady=(18, 3))
+        tk.Label(left, text='COMMAND CENTER', bg=PANEL, fg=TEXT, font=('Segoe UI Semibold', 12)).pack(anchor='w', padx=16, pady=(0, 2))
+        tk.Label(left, text='Start a session, scan, then solve', bg=PANEL, fg=MUTED, font=('Segoe UI', 8)).pack(anchor='w', padx=16, pady=(0, 13))
 
-        self.btn_r = RoundedButton(left, '①  START CHROME', self.start_chrome, BLUE, CYAN, height=42)
-        self.btn_r.pack(fill='x', padx=14, pady=4)
-        self.btn_y = RoundedButton(left, '②  SCAN QUESTION', self.scan, PANEL2, BLUE, TEXT, height=42)
-        self.btn_y.pack(fill='x', padx=14, pady=4)
-        self.btn_a = RoundedButton(left, '③  SOLVE WITH GEMINI', self.solve, PURPLE, CYAN, height=42)
-        self.btn_a.pack(fill='x', padx=14, pady=4)
+        self.btn_r = RoundedButton(left, '01   START CHROME', self.start_chrome, BLUE, CYAN, height=46, radius=13)
+        self.btn_r.pack(fill='x', padx=14, pady=5)
+        self.btn_y = RoundedButton(left, '02   SCAN QUESTION', self.scan, PANEL2, BLUE, TEXT, height=46, radius=13)
+        self.btn_y.pack(fill='x', padx=14, pady=5)
+        self.btn_a = RoundedButton(left, '03   SOLVE WITH GEMINI', self.solve, PURPLE, CYAN, height=46, radius=13)
+        self.btn_a.pack(fill='x', padx=14, pady=5)
 
         # Compact status card
         status = tk.Frame(left, bg=PANEL2, highlightbackground=border, highlightthickness=1)
-        status.pack(fill='x', padx=14, pady=(15, 8))
-        tk.Label(status, text='CONNECTION STATUS', bg=PANEL2, fg=CYAN,
-                 font=('Segoe UI Semibold', 8)).pack(anchor='w', padx=12, pady=(10, 5))
+        status.pack(fill='x', padx=14, pady=(17, 10))
+        tk.Label(status, text='LIVE SYSTEM STATUS', bg=PANEL2, fg=CYAN,
+                 font=('Segoe UI Semibold', 8)).pack(anchor='w', padx=12, pady=(11, 7))
         self.status_debug = tk.Label(status, text='Chrome connection: checking…', bg=PANEL2, fg=MUTED,
                                       font=('Segoe UI', 8), anchor='w')
         self.status_debug.pack(fill='x', padx=12, pady=2)
@@ -450,13 +452,13 @@ class App(tk.Tk):
                                      font=('Segoe UI', 8), anchor='w')
         self.status_scan.pack(fill='x', padx=12, pady=(2, 10))
 
-        self.btn_theme = RoundedButton(left, '✦  CHANGE THEME', self.toggle_theme, PANEL2, PURPLE, TEXT, height=38)
+        tk.Label(left, text='PERSONALIZE', bg=PANEL, fg=BLUE, font=('Segoe UI Semibold', 8)).pack(anchor='w', padx=16, pady=(10, 5))
+        self.btn_theme = RoundedButton(left, '✦  CHANGE THEME', self.toggle_theme, PANEL2, PURPLE, TEXT, height=40, radius=12)
         self.btn_theme.pack(fill='x', padx=14, pady=4)
-        self.btn_x = RoundedButton(left, '×  EXIT YVZTOOLS', self.on_exit, PANEL2, BLUE, TEXT, height=38)
+        self.btn_x = RoundedButton(left, 'EXIT YVZTOOLS', self.on_exit, PANEL2, BLUE, TEXT, height=40, radius=12)
         self.btn_x.pack(fill='x', padx=14, pady=4)
 
-        tk.Label(left, text='SHORTCUTS', bg=PANEL, fg=MUTED,
-                 font=('Segoe UI Semibold', 8)).pack(anchor='w', padx=16, pady=(15, 4))
+        tk.Label(left, text='KEYBOARD SHORTCUTS', bg=PANEL, fg=MUTED, font=('Segoe UI Semibold', 8)).pack(anchor='w', padx=16, pady=(15, 5))
         keys = tk.Frame(left, bg=PANEL)
         keys.pack(fill='x', padx=14)
         key_items = [('1','Auto scan + solve'), ('R','Chrome'), ('Y','Scan only'), ('A','Solve scanned'), ('L','Answer output style'), ('2-4','Presets'), ('T','Theme'), ('X','Exit')]
@@ -484,19 +486,19 @@ class App(tk.Tk):
 
         # Right: live workspace
         header = tk.Frame(right, bg=PANEL)
-        header.pack(fill='x', padx=16, pady=(13, 0))
+        header.pack(fill='x', padx=18, pady=(17, 0))
         tk.Label(header, text='QUESTION WORKSPACE', bg=PANEL, fg=TEXT,
-                 font=('Segoe UI Semibold', 11)).pack(side='left')
+                 font=('Segoe UI Semibold', 12)).pack(side='left')
         self.live_dot = tk.Label(header, text='● READY', bg=PANEL, fg=GREEN,
                                  font=('Segoe UI Semibold', 8))
         self.live_dot.pack(side='right')
         self.page_label = tk.Label(right, text='Waiting for a Netmath / NetFrancais question — start Chrome, then scan.',
-                                   bg=PANEL, fg=MUTED, font=('Segoe UI', 8), anchor='w')
-        self.page_label.pack(fill='x', padx=16, pady=(2, 9))
+                                   bg=PANEL, fg=MUTED, font=('Segoe UI', 9), anchor='w')
+        self.page_label.pack(fill='x', padx=18, pady=(4, 12))
 
         # Question card
         qcard = tk.Frame(right, bg=PANEL2, highlightbackground=border, highlightthickness=1)
-        qcard.pack(fill='x', padx=14, pady=(0, 9))
+        qcard.pack(fill='x', padx=16, pady=(0, 11))
         qhead = tk.Frame(qcard, bg=PANEL2)
         qhead.pack(fill='x', padx=12, pady=(8, 0))
         tk.Label(qhead, text='QUESTION', bg=PANEL2, fg=CYAN,
@@ -505,13 +507,13 @@ class App(tk.Tk):
                  font=('Segoe UI', 7)).pack(side='right')
         self.question = tk.Text(qcard, bg=PANEL2, fg=TEXT, insertbackground=TEXT,
                                 selectbackground='#34488B', relief='flat', wrap='word',
-                                font=('Segoe UI', 10), height=5)
+                                font=('Segoe UI', 11), height=4, padx=4, pady=4)
         self.question.pack(fill='x', padx=12, pady=(3, 10))
         self.question.configure(state='disabled')
 
         # Solution card
         solcard = tk.Frame(right, bg=PANEL2, highlightbackground=border, highlightthickness=1)
-        solcard.pack(fill='both', expand=True, padx=14, pady=(0, 9))
+        solcard.pack(fill='both', expand=True, padx=16, pady=(0, 11))
         solhead = tk.Frame(solcard, bg=PANEL2)
         solhead.pack(fill='x', padx=12, pady=(8, 0))
         tk.Label(solhead, text='AI SOLUTION', bg=PANEL2, fg=GREEN,
@@ -535,7 +537,7 @@ class App(tk.Tk):
 
         self.solution = tk.Text(solcard, bg=PANEL2, fg=TEXT, insertbackground=TEXT,
                                 selectbackground='#34488B', relief='flat', wrap='word',
-                                font=('Segoe UI', 10), padx=10, pady=7)
+                                font=('Segoe UI', 11), padx=14, pady=10, spacing1=2, spacing3=3)
         self.solution.pack(fill='both', expand=True, padx=12, pady=(0, 10))
         self.solution.configure(state='disabled')
 
@@ -549,11 +551,11 @@ class App(tk.Tk):
 
         # Activity footer
         logcard = tk.Frame(right, bg=PANEL2, highlightbackground=border, highlightthickness=1)
-        logcard.pack(fill='x', padx=14, pady=(0, 14))
-        tk.Label(logcard, text='ACTIVITY', bg=PANEL2, fg=GREEN,
-                 font=('Segoe UI Semibold', 8)).pack(anchor='w', padx=12, pady=(7, 1))
+        logcard.pack(fill='x', padx=16, pady=(0, 16))
+        tk.Label(logcard, text='RECENT ACTIVITY', bg=PANEL2, fg=GREEN,
+                 font=('Segoe UI Semibold', 8)).pack(anchor='w', padx=12, pady=(8, 2))
         self.log = tk.Text(logcard, bg=PANEL2, fg=MUTED, relief='flat', wrap='word',
-                           font=('Consolas', 8), height=3)
+                           font=('Consolas', 8), height=2, padx=3, pady=3)
         self.log.pack(fill='both', expand=True, padx=12, pady=(0, 5))
         self.log.configure(state='disabled')
 

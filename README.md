@@ -29,11 +29,12 @@ YVZTOOLS/
 
 ## Features
 
-- 🌌 YVZTOOLS NetMath Space
+- 🌌 Redesigned YVZTools NetMath Space dashboard (v5.2)
 - 🧠 Smart question solving
 - 🌐 Chrome/DevTools integration
-- 🎨 Multiple themes
-- 🔄 Built-in updater (visible update/check window)
+- 🎨 Multiple themes and answer-style customization
+- ⌨️ Keyboard shortcuts for fast workflows
+- 🔄 Built-in updater with automatic version checks
 
 ## Build from source
 
