@@ -309,7 +309,7 @@ class App(tk.Tk):
         geometry = '1180x760'
         try:
             saved = core.load_config().get('window_geometry', '')
-            match = re.fullmatch(r'(\\d+)x(\\d+)([+-]\\d+){2}', str(saved))
+            match = re.fullmatch(r'(\d+)x(\d+)([+-]\d+){2}', str(saved))
             if match:
                 width, height = int(match.group(1)), int(match.group(2))
                 if 820 <= width <= 3200 and 600 <= height <= 2400:
