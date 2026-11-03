@@ -29,7 +29,10 @@ YVZTOOLS/
 
 ## Features
 
-- 🌌 Redesigned YVZTools NetMath Space dashboard (v5.2)
+- 🌌 YVZTools NetMath Space dashboard (v5.3)
+- 🪟 Resizable window with saved size and position
+- ✨ Smoother space background, button hover, and AI progress animations
+- 🔧 Fixed updater launch path for packaged Windows builds
 - 🧠 Smart question solving
 - 🌐 Chrome/DevTools integration
 - 🎨 Multiple themes and answer-style customization

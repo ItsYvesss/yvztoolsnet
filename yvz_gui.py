@@ -19,6 +19,9 @@ from version import APP_VERSION, DISPLAY_VERSION
 
 VERSION = APP_VERSION
 BASE = Path(__file__).resolve().parent
+# In a PyInstaller one-file build, __file__ points into temporary _MEIPASS.
+# Installed executables live beside sys.executable, not in that temp folder.
+INSTALL_DIR = Path(sys.executable).resolve().parent if getattr(sys, 'frozen', False) else BASE
 CORE_PATH = BASE / 'yvznetmath_core.py'
 
 spec = importlib.util.spec_from_file_location('yvznetmath_core', CORE_PATH)
@@ -51,6 +54,9 @@ class RoundedButton(tk.Canvas):
         self.radius = radius
         self.enabled = True
         self._hover = False
+        self._hover_progress = 0.0
+        self._hover_target = 0.0
+        self._hover_after = None
         self.bind('<Enter>', self._enter)
         self.bind('<Leave>', self._leave)
         self.bind('<ButtonPress-1>', self._press)
@@ -61,11 +67,30 @@ class RoundedButton(tk.Canvas):
     def _enter(self, _=None):
         if self.enabled:
             self._hover = True
-            self._draw()
+            self._animate_hover(1.0)
 
     def _leave(self, _=None):
         self._hover = False
+        self._animate_hover(0.0)
+
+    def _animate_hover(self, target):
+        self._hover_target = target
+        if self._hover_after is None:
+            self._tick_hover()
+
+    def _tick_hover(self):
+        self._hover_after = None
+        delta = self._hover_target - self._hover_progress
+        if abs(delta) < 0.04:
+            self._hover_progress = self._hover_target
+        else:
+            self._hover_progress += delta * 0.38
         self._draw()
+        if self._hover_progress != self._hover_target:
+            try:
+                self._hover_after = self.after(16, self._tick_hover)
+            except tk.TclError:
+                self._hover_after = None
 
     def _press(self, _=None):
         if self.enabled:
@@ -81,7 +106,7 @@ class RoundedButton(tk.Canvas):
         self.delete('all')
         w = max(self.winfo_width(), 80)
         h = max(self.winfo_height(), self.height)
-        fill = self.hover if self._hover else self.fill
+        fill = _lerp_hex(self.fill, self.hover, self._hover_progress)
         if not self.enabled:
             fill = PANEL2
         yoff = 1 if pressed and self.enabled else 0
@@ -115,7 +140,7 @@ class SpaceBackground(tk.Canvas):
         self._seed_stars()
         self._bw, self._bh = 900, 650
         self.bind('<Configure>', self._on_resize)
-        self.after(30, self.animate)
+        self.after(24, self.animate)
 
     def _on_resize(self, e):
         # Only remember the size; the animation loop repaints. Redrawing here on every
@@ -138,7 +163,7 @@ class SpaceBackground(tk.Canvas):
             return
         self.t += 1
         self.draw()
-        self.after(30, self.animate)
+        self.after(24, self.animate)
 
     def stop_animation(self):
         self.running = False
@@ -198,8 +223,8 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title(f'{APP_NAME} {DISPLAY_VERSION}')
-        self.geometry('1180x760')
         self.minsize(820, 600)
+        self._restore_window_geometry()
         self.resizable(True, True)
         self._fullscreen = False
         self.bind('<F11>', self._toggle_fullscreen)
@@ -278,6 +303,30 @@ class App(tk.Tk):
         self.refresh_status()
         # refresh_status schedules its own lightweight background polling.
         self.check_update_status()
+
+    def _restore_window_geometry(self):
+        """Restore a sensible saved window size without accepting broken values."""
+        geometry = '1180x760'
+        try:
+            saved = core.load_config().get('window_geometry', '')
+            match = re.fullmatch(r'(\\d+)x(\\d+)([+-]\\d+){2}', str(saved))
+            if match:
+                width, height = int(match.group(1)), int(match.group(2))
+                if 820 <= width <= 3200 and 600 <= height <= 2400:
+                    geometry = saved
+        except (TypeError, ValueError, tk.TclError):
+            pass
+        self.geometry(geometry)
+
+    def _save_window_geometry(self):
+        """Persist the last normal window size and position."""
+        try:
+            if self.state() == 'normal' and not self._fullscreen:
+                cfg = core.load_config()
+                cfg['window_geometry'] = self.geometry()
+                core.save_config(cfg)
+        except (OSError, tk.TclError, TypeError):
+            pass
 
     def _on_window_resize(self, event=None):
         # Reflow the main control deck as the user resizes the window.
@@ -855,16 +904,20 @@ class App(tk.Tk):
             self._schedule_update_check()
 
     def open_updater(self):
-        """Launch the bundled updater executable from beside the app."""
-        updater_exe = BASE / 'YVZUPDATER.exe'
+        """Launch the installed updater beside YVZNETMATH.exe.
+
+        PyInstaller one-file builds extract __file__ into a temporary _MEIPASS
+        folder. INSTALL_DIR points to the actual directory containing the app.
+        """
+        updater_exe = INSTALL_DIR / 'YVZUPDATER.exe'
         try:
             if updater_exe.is_file():
-                subprocess.Popen([str(updater_exe)], cwd=str(BASE))
+                subprocess.Popen([str(updater_exe)], cwd=str(INSTALL_DIR))
                 self.write_log('Updater launched.')
             else:
                 messagebox.showerror(
                     'Updater Not Found',
-                    'YVZUPDATER.exe was not found beside the app. Reinstall YVZTools using the official installer.'
+                    f'YVZUPDATER.exe was not found in the install folder:\\n{INSTALL_DIR}\\n\\nRun the latest official YVZTOOLS installer to restore the updater.'
                 )
                 self.write_log('Updater launch failed • YVZUPDATER.exe missing.')
         except OSError as exc:
@@ -928,7 +981,7 @@ class App(tk.Tk):
             self.ai_progress_value = min(92, self.ai_progress_value + 0.55)
             self.ai_eta.config(text=f'EST. {int(self.ai_progress_value)}% • Sending / waiting…')
         self.draw_ai_progress()
-        self.ai_progress_after = self.after(40, self._tick_ai_progress)
+        self.ai_progress_after = self.after(24, self._tick_ai_progress)
 
     def set_ai_stage(self, text, percent=None, eta=''):
         def update():
@@ -944,7 +997,7 @@ class App(tk.Tk):
                 self.ai_eta.config(text=eta or (f'{int(self.ai_progress_value)}%' if percent is not None else ''))
             self.draw_ai_progress()
             if self.ai_progress_after is None and self.ai_progress_mode != 'idle':
-                self.ai_progress_after = self.after(40, self._tick_ai_progress)
+                self.ai_progress_after = self.after(24, self._tick_ai_progress)
         self.after(0, update)
 
     def finish_ai_progress(self):
@@ -1325,6 +1378,7 @@ class App(tk.Tk):
 
     def on_exit(self):
         if messagebox.askyesno('Exit YVZTOOLS', 'Close the app?'):
+            self._save_window_geometry()
             self.destroy()
 
 
