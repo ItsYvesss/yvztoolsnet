@@ -338,8 +338,8 @@ class App(tk.Tk):
         gap = 6 if compact else 8
         bottom_pad = 10 if compact else 20
         try:
-            self.grid_columnconfigure(0, weight=2 if compact else 1, minsize=205 if compact else 245, uniform='cols')
-            self.grid_columnconfigure(1, weight=3, minsize=320 if compact else 390, uniform='cols')
+            self.grid_columnconfigure(0, weight=1, minsize=190 if compact else 245)
+            self.grid_columnconfigure(1, weight=2, minsize=310 if compact else 390)
             self.header_frame.grid_configure(padx=side_pad)
             self.left_frame.grid_configure(padx=(side_pad, gap), pady=(0, bottom_pad))
             self.right_frame.grid_configure(padx=(gap, side_pad), pady=(0, bottom_pad))
@@ -437,8 +437,8 @@ class App(tk.Tk):
 
         # Header
         top = tk.Frame(self, bg=BG)
-        self.grid_columnconfigure(0, weight=1, minsize=270, uniform='cols')
-        self.grid_columnconfigure(1, weight=3, uniform='cols')
+        self.grid_columnconfigure(0, weight=1, minsize=245)
+        self.grid_columnconfigure(1, weight=2, minsize=390)
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=1)
         top.grid(row=0, column=0, columnspan=2, sticky='ew', padx=26, pady=(18, 10))
@@ -838,7 +838,7 @@ class App(tk.Tk):
         return tuple((parts + [0, 0, 0])[:3]) if parts else (0, 0, 0)
 
     def check_update_status(self):
-        """Check GitHub Releases in the background, then repeat every 30 seconds."""
+        """Check GitHub Releases in the background, then repeat every 10 seconds."""
         if self._update_check_running:
             return
         self._update_check_running = True
@@ -868,7 +868,7 @@ class App(tk.Tk):
     def _schedule_update_check(self):
         self._update_check_running = False
         try:
-            self.after(30000, self.check_update_status)
+            self.after(10000, self.check_update_status)
         except tk.TclError:
             pass
 
@@ -876,7 +876,7 @@ class App(tk.Tk):
         try:
             if is_outdated:
                 self.update_status_box.configure(
-                    text=f'OUTDATED • {latest.upper()}',
+                    text=f'UPDATE AVAILABLE • {latest.upper()}',
                     bg=PANEL2, fg=RED, highlightbackground=RED
                 )
                 self.update_button.pack(side='left', padx=(6, 0))
