@@ -29,9 +29,10 @@ YVZTOOLS/
 
 ## Features
 
-- 🌌 YVZTools NetMath Space dashboard (v5.4)
+- 🌌 YVZTools NetMath Space dashboard (v5.5)
 - 🪟 Fixed responsive resizing and column sizing to prevent panel overlap
 - 🔄 Update status checks GitHub every 10 seconds and shows UP TO DATE or UPDATE AVAILABLE
+- 🚀 Cinematic v5.5 startup sequence with layered space glow, orbiting reactor, drifting particles, and eased progress animation
 - ✨ Smoother space background, button hover, and AI progress animations
 - 🔧 Fixed updater launch path for packaged Windows builds
 - 🧠 Smart question solving

@@ -1391,9 +1391,9 @@ def _lerp_hex(a, b, t):
 
 
 class YVZSplash(tk.Tk):
-    """Animated startup screen: centered, fade in/out, rotating rings, smooth progress."""
-    W, H = 640, 380
-    DURATION = 2.8
+    """Cinematic animated startup screen with a layered space scene and eased boot sequence."""
+    W, H = 760, 460
+    DURATION = 3.65
     PALETTES = {
         'dark':   dict(top='#030614', bot='#0B1233', star='#7FA9FF', ring1='#1B3A8C', ring2='#5B34A0', accent='#4A9BFF', accent2='#9A6BFF', text='#F4F7FF', sub='#61D8FF', muted='#91A1CC', track='#14204D'),
         'rainbow':dict(top='#090518', bot='#25103A', star='#FF83D8', ring1='#42E8FF', ring2='#B56BFF', accent='#FF5EBB', accent2='#6BFFB8', text='#FFF7FF', sub='#42E8FF', muted='#B9ACD9', track='#241640'),
@@ -1402,7 +1402,13 @@ class YVZSplash(tk.Tk):
         'red':    dict(top='#070203', bot='#25080D', star='#FF526A', ring1='#741526', ring2='#9B263E', accent='#F0445E', accent2='#FF7586', text='#FFF1F2', sub='#FF7586', muted='#B9868D', track='#2A0C12'),
         'oreo':   dict(top='#F7F3EE', bot='#D8CEC4', star='#3B2923', ring1='#6B5145', ring2='#9B8172', accent='#3B2923', accent2='#76665D', text='#241B18', sub='#4B352C', muted='#76665D', track='#C8B9AC'),
     }
-    STAGES = [(0.00, 'Starting engine'), (0.28, 'Loading math core'), (0.58, 'Preparing interface'), (0.86, 'Almost ready')]
+    STAGES = [
+        (0.00, 'INITIALIZING CORE SYSTEMS'),
+        (0.22, 'LOADING NETMATH ENGINE'),
+        (0.48, 'CALIBRATING INTERFACE'),
+        (0.73, 'SYNCHRONIZING MODULES'),
+        (0.94, 'READY FOR TAKEOFF'),
+    ]
 
     def __init__(self):
         super().__init__()
@@ -1418,89 +1424,151 @@ class YVZSplash(tk.Tk):
             self.attributes('-alpha', 0.0)
         except Exception:
             pass
-        self.canvas = tk.Canvas(self, width=self.W, height=self.H, bg=self.pal['top'], highlightthickness=0, bd=0)
+        self.canvas = tk.Canvas(self, width=self.W, height=self.H, bg=self.pal['top'],
+                                highlightthickness=0, bd=0)
         self.canvas.pack(fill='both', expand=True)
 
-        # Static vertical gradient (drawn once).
-        for i in range(0, self.H, 4):
-            self.canvas.create_rectangle(0, i, self.W, i + 4, outline='',
-                                         fill=_lerp_hex(self.pal['top'], self.pal['bot'], i / self.H))
-        rnd = random.Random(7)
-        self.stars = [[rnd.uniform(0, self.W), rnd.uniform(0, self.H), rnd.choice([1, 1, 2]),
-                       rnd.uniform(0.15, 0.6), rnd.uniform(0, 6.28)] for _ in range(60)]
-        self.t0 = time.time()
+        c, P = self.canvas, self.pal
+        # Rich static background: gradient, soft planetary haze and fine grid accents.
+        for i in range(0, self.H, 3):
+            c.create_rectangle(0, i, self.W, i + 3, outline='',
+                               fill=_lerp_hex(P['top'], P['bot'], i / self.H))
+        c.create_oval(205, 18, 555, 368, fill=_lerp_hex(P['top'], P['ring1'], 0.20), outline='')
+        c.create_oval(250, 55, 510, 315, fill=_lerp_hex(P['top'], P['ring2'], 0.18), outline='')
+        c.create_oval(300, 105, 460, 265, fill=_lerp_hex(P['top'], P['accent'], 0.13), outline='')
+        for x in range(36, self.W, 48):
+            c.create_line(x, 24, x, self.H - 24, fill=_lerp_hex(P['top'], P['ring1'], 0.16), width=1)
+        for y in range(28, self.H, 48):
+            c.create_line(24, y, self.W - 24, y, fill=_lerp_hex(P['top'], P['ring1'], 0.13), width=1)
+        c.create_rectangle(14, 14, self.W - 14, self.H - 14,
+                           outline=_lerp_hex(P['top'], P['ring1'], 0.65), width=1)
+
+        rnd = random.Random(19)
+        self.stars = [[rnd.uniform(24, self.W - 24), rnd.uniform(24, self.H - 24),
+                       rnd.choice([1, 1, 1, 2]), rnd.uniform(10, 34),
+                       rnd.uniform(0, 6.28), rnd.uniform(0.6, 1.8)] for _ in range(105)]
+        self.t0 = time.perf_counter()
         self.last = self.t0
         self.after(16, self.animate)
 
     def animate(self):
         import math
-        el = time.time() - self.t0
-        dt = el - (self.last - self.t0)
-        self.last = time.time()
-        P = self.pal
-        c = self.canvas
+        now = time.perf_counter()
+        el = now - self.t0
+        dt = min(0.05, max(0.001, now - self.last))
+        self.last = now
+        P, c = self.pal, self.canvas
         c.delete('dyn')
 
-        # Fade in / out.
-        fade_out_start = self.DURATION - 0.35
-        alpha = min(1.0, el / 0.4)
+        # Smooth fade and a short, subtle ease-out at the end.
+        fade_out_start = self.DURATION - 0.42
+        alpha = min(1.0, el / 0.55)
         if el > fade_out_start:
-            alpha = max(0.0, 1.0 - (el - fade_out_start) / 0.35)
+            alpha = max(0.0, 1.0 - (el - fade_out_start) / 0.42)
         try:
             self.attributes('-alpha', alpha)
         except Exception:
             pass
 
-        # Drifting stars with twinkle.
+        # Deep-space particles with independent drift and twinkle.
         for st in self.stars:
-            st[0] -= st[3] * 60 * max(dt, 0.001)
-            if st[0] < -4:
-                st[0] = self.W + 4
-            tw = 0.5 + 0.5 * math.sin(el * 3 + st[4])
-            col = _lerp_hex(_lerp_hex(P['top'], P['bot'], st[1] / self.H), P['star'], 0.25 + 0.6 * tw)
-            r = st[2]
-            c.create_oval(st[0] - r, st[1] - r, st[0] + r, st[1] + r, fill=col, outline='', tags='dyn')
+            st[0] -= st[3] * dt
+            if st[0] < 22:
+                st[0] = self.W - 22
+                st[1] = 24 + ((st[1] * 1.37) % (self.H - 48))
+            tw = 0.5 + 0.5 * math.sin(el * st[5] + st[4])
+            color = _lerp_hex(_lerp_hex(P['top'], P['bot'], st[1] / self.H),
+                              P['star'], 0.18 + 0.72 * tw)
+            r = st[2] * (0.75 + tw * 0.35)
+            c.create_oval(st[0] - r, st[1] - r, st[0] + r, st[1] + r,
+                          fill=color, outline='', tags='dyn')
+            if st[2] == 2 and tw > 0.86:
+                c.create_line(st[0] - 5, st[1], st[0] + 5, st[1],
+                              fill=_lerp_hex(P['top'], P['star'], 0.55), tags='dyn')
 
-        # Rotating orbit rings with bright arc segments.
-        cx, cy = self.W / 2, 150
-        for rad, col, sp, w in ((150, P['ring1'], 40, 2), (105, P['ring2'], -70, 2), (62, P['accent'], 120, 2)):
-            c.create_oval(cx - rad, cy - rad, cx + rad, cy + rad, outline=_lerp_hex(P['bot'], col, 0.45), width=1, tags='dyn')
-            c.create_arc(cx - rad, cy - rad, cx + rad, cy + rad, start=(el * sp) % 360, extent=70,
-                         style='arc', outline=col, width=w, tags='dyn')
+        # Layered reactor / orbit centerpiece.
+        cx, cy = self.W / 2, 174
+        pulse = 0.5 + 0.5 * math.sin(el * 2.4)
+        c.create_oval(cx - 112, cy - 112, cx + 112, cy + 112,
+                      outline=_lerp_hex(P['top'], P['accent'], 0.22 + pulse * 0.12),
+                      width=18, tags='dyn')
+        c.create_oval(cx - 94, cy - 94, cx + 94, cy + 94,
+                      outline=_lerp_hex(P['bot'], P['ring1'], 0.72), width=2, tags='dyn')
+        c.create_oval(cx - 75, cy - 75, cx + 75, cy + 75,
+                      outline=_lerp_hex(P['bot'], P['ring2'], 0.82), width=2, tags='dyn')
+        for rad, col, speed, extent, width in (
+            (112, P['accent'], 54, 88, 4),
+            (94, P['sub'], -86, 62, 3),
+            (75, P['accent2'], 112, 112, 3),
+        ):
+            angle = (el * speed) % 360
+            c.create_arc(cx-rad, cy-rad, cx+rad, cy+rad, start=angle,
+                         extent=extent, style='arc', outline=col, width=width, tags='dyn')
+            c.create_arc(cx-rad, cy-rad, cx+rad, cy+rad, start=angle+180,
+                         extent=extent * 0.42, style='arc',
+                         outline=_lerp_hex(P['top'], col, 0.72), width=2, tags='dyn')
+            a = math.radians(angle + extent)
+            px, py = cx + rad * math.cos(a), cy - rad * math.sin(a)
+            c.create_oval(px-4, py-4, px+4, py+4, fill=P['text'], outline=col, width=2, tags='dyn')
 
-        # Logo + subtitle fade in.
-        a_logo = min(1.0, max(0.0, (el - 0.15) / 0.5))
-        a_sub = min(1.0, max(0.0, (el - 0.55) / 0.5))
-        bgc = _lerp_hex(P['top'], P['bot'], 150 / self.H)
-        size = 30 + int(4 * min(1.0, el / 0.8))
-        c.create_text(cx, cy - 8, text='YVZTOOLS', fill=_lerp_hex(bgc, P['text'], a_logo),
-                      font=('Segoe UI Black', size), tags='dyn')
-        c.create_text(cx, cy + 32, text='NETMATH SPACE', fill=_lerp_hex(bgc, P['sub'], a_sub),
-                      font=('Segoe UI Semibold', 12), tags='dyn')
+        # Core glow and animated Y mark.
+        core_r = 39 + pulse * 4
+        c.create_oval(cx-core_r-12, cy-core_r-12, cx+core_r+12, cy+core_r+12,
+                      fill=_lerp_hex(P['top'], P['accent'], 0.30), outline='', tags='dyn')
+        c.create_oval(cx-core_r, cy-core_r, cx+core_r, cy+core_r,
+                      fill=_lerp_hex(P['top'], P['ring1'], 0.58),
+                      outline=P['accent'], width=2, tags='dyn')
+        c.create_text(cx, cy-1, text='Y', fill=P['text'],
+                      font=('Segoe UI Black', 42), tags='dyn')
+        c.create_text(cx, cy+54, text='YVZTOOLS', fill=P['text'],
+                      font=('Segoe UI Black', 25), tags='dyn')
+        c.create_text(cx, cy+82, text='NETMATH SPACE', fill=P['sub'],
+                      font=('Segoe UI Semibold', 10), tags='dyn')
 
-        # Smooth eased progress bar with glow.
-        run = max(0.0, min(1.0, el / (self.DURATION - 0.35)))
+        # Small telemetry labels make the screen feel like a live boot sequence.
+        c.create_text(54, 80, anchor='w', text='SYSTEM BOOT', fill=P['sub'],
+                      font=('Segoe UI Semibold', 8), tags='dyn')
+        c.create_text(54, 98, anchor='w', text='SECURE SESSION  /  ONLINE', fill=P['muted'],
+                      font=('Segoe UI', 7), tags='dyn')
+        c.create_text(self.W-54, 80, anchor='e', text='YVZ SPACE NETWORK', fill=P['sub'],
+                      font=('Segoe UI Semibold', 8), tags='dyn')
+        c.create_text(self.W-54, 98, anchor='e', text='BUILD ' + DISPLAY_VERSION.upper(),
+                      fill=P['muted'], font=('Segoe UI', 7), tags='dyn')
+
+        # Cubic ease-out progress with a moving light sweep and bright leading edge.
+        run = max(0.0, min(1.0, el / (self.DURATION - 0.42)))
         prog = 1 - (1 - run) ** 3
-        x0, x1, y = 130, self.W - 130, 288
-        c.create_line(x0, y, x1, y, width=8, capstyle='round', fill=P['track'], tags='dyn')
-        if prog > 0.01:
+        x0, x1, y = 112, self.W - 112, 374
+        c.create_line(x0, y, x1, y, width=10, capstyle='round',
+                      fill=P['track'], tags='dyn')
+        if prog > 0.005:
             xe = x0 + (x1 - x0) * prog
-            c.create_line(x0, y, xe, y, width=14, capstyle='round', fill=_lerp_hex(P['track'], P['accent'], 0.25), tags='dyn')
-            c.create_line(x0, y, xe, y, width=8, capstyle='round', fill=P['accent'], tags='dyn')
-            c.create_oval(xe - 4, y - 4, xe + 4, y + 4, fill=P['text'], outline='', tags='dyn')
+            c.create_line(x0, y, xe, y, width=18, capstyle='round',
+                          fill=_lerp_hex(P['track'], P['accent'], 0.36), tags='dyn')
+            c.create_line(x0, y, xe, y, width=8, capstyle='round',
+                          fill=P['accent'], tags='dyn')
+            glow = 8 + pulse * 3
+            c.create_oval(xe-glow, y-glow, xe+glow, y+glow,
+                          fill=P['text'], outline=P['sub'], width=2, tags='dyn')
+            shine = x0 + ((el * 210) % max(1, (x1 - x0)))
+            if shine < xe - 10:
+                c.create_line(max(x0, shine-18), y, min(xe, shine+18), y,
+                              fill=_lerp_hex(P['accent'], P['text'], 0.55),
+                              width=2, capstyle='round', tags='dyn')
 
-        # Status text + percent.
-        stage = [t for th, t in self.STAGES if prog >= th][-1]
-        dots = '.' * (int(el * 3) % 4)
-        c.create_text(x0, y + 24, anchor='w', text=stage + dots, fill=P['muted'], font=('Segoe UI', 9), tags='dyn')
-        c.create_text(x1, y + 24, anchor='e', text=f'{int(prog * 100)}%', fill=P['sub'], font=('Segoe UI Semibold', 9), tags='dyn')
-        c.create_text(cx, self.H - 18, text=DISPLAY_VERSION, fill=P['muted'], font=('Segoe UI', 8), tags='dyn')
+        stage = [label for threshold, label in self.STAGES if prog >= threshold][-1]
+        c.create_text(x0, y+26, anchor='w', text=stage,
+                      fill=P['muted'], font=('Segoe UI Semibold', 8), tags='dyn')
+        c.create_text(x1, y+26, anchor='e', text=f'{int(prog * 100):02d}%',
+                      fill=P['sub'], font=('Segoe UI Semibold', 10), tags='dyn')
+        c.create_text(self.W/2, self.H-22, text='POWERED BY YVZTOOLS  •  INITIALIZING YOUR WORKSPACE',
+                      fill=_lerp_hex(P['muted'], P['text'], 0.18),
+                      font=('Segoe UI', 7), tags='dyn')
 
         if el < self.DURATION:
             self.after(16, self.animate)
         else:
             self.destroy()
-
 
 def launch_app():
     cfg = core.load_config()
