@@ -329,15 +329,25 @@ class App(tk.Tk):
             pass
 
     def _on_window_resize(self, event=None):
-        # Reflow the main control deck as the user resizes the window.
+        """Keep the dashboard readable at every supported window width."""
         if event is not None and event.widget is not self:
             return
-        width = max(self.winfo_width(), 680)
-        compact = width < 900
+        width = max(self.winfo_width(), 820)
+        compact = width < 1000
         side_pad = 12 if compact else 26
         gap = 6 if compact else 8
         bottom_pad = 10 if compact else 20
         try:
+            # Move the version/update controls below the brand before the
+            # header gets crowded; this prevents the header widgets colliding.
+            if hasattr(self, 'header_update_cluster'):
+                if width < 1080:
+                    self.header_update_cluster.pack_forget()
+                    self.header_update_cluster.pack(side='bottom', anchor='e', pady=(8, 0))
+                else:
+                    self.header_update_cluster.pack_forget()
+                    self.header_update_cluster.pack(side='right', pady=3)
+
             self.grid_columnconfigure(0, weight=1, minsize=190 if compact else 245)
             self.grid_columnconfigure(1, weight=2, minsize=310 if compact else 390)
             self.header_frame.grid_configure(padx=side_pad)
@@ -455,6 +465,7 @@ class App(tk.Tk):
         tk.Label(brand_text, text='NETMATH SPACE  /  DESKTOP CONTROL CENTER', bg=BG, fg=BLUE, font=('Segoe UI Semibold', 8)).pack(anchor='w', pady=(0, 1))
         # Version and update status stay in the existing header.
         update_cluster = tk.Frame(title_row, bg=BG)
+        self.header_update_cluster = update_cluster
         update_cluster.pack(side='right', pady=3)
         tk.Label(update_cluster, text=DISPLAY_VERSION.upper(), bg=PANEL2, fg=CYAN,
                  font=('Segoe UI Semibold', 8), padx=10, pady=4).pack(side='left', padx=(0, 6))
