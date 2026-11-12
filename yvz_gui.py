@@ -497,6 +497,11 @@ class App(tk.Tk):
         self.btn_r.pack(fill='x', padx=14, pady=5)
         self.btn_y = RoundedButton(left, '02   SCAN QUESTION', self.scan, PANEL2, BLUE, TEXT, height=46, radius=13)
         self.btn_y.pack(fill='x', padx=14, pady=5)
+        # One-touch equivalent of keyboard shortcut 1: scan, capture the page,
+        # and immediately send the question to Gemini using preset 1.
+        self.btn_full = RoundedButton(left, 'SCAN FULL', lambda: self.scan(auto_solve=True),
+                                      GREEN, CYAN, '#07111F', height=48, radius=13)
+        self.btn_full.pack(fill='x', padx=14, pady=5)
         self.btn_a = RoundedButton(left, '03   SOLVE WITH GEMINI', self.solve, PURPLE, CYAN, height=46, radius=13)
         self.btn_a.pack(fill='x', padx=14, pady=5)
 
@@ -521,7 +526,7 @@ class App(tk.Tk):
         tk.Label(left, text='KEYBOARD SHORTCUTS', bg=PANEL, fg=MUTED, font=('Segoe UI Semibold', 8)).pack(anchor='w', padx=16, pady=(15, 5))
         keys = tk.Frame(left, bg=PANEL)
         keys.pack(fill='x', padx=14)
-        key_items = [('1','Auto scan + solve'), ('R','Chrome'), ('Y','Scan only'), ('A','Solve scanned'), ('L','Answer output style'), ('2-4','Presets'), ('T','Theme'), ('X','Exit')]
+        key_items = [('1','Auto scan + solve (same as SCAN FULL)'), ('R','Chrome'), ('Y','Scan only'), ('A','Solve scanned'), ('L','Answer output style'), ('2-4','Presets'), ('T','Theme'), ('X','Exit')]
         for i, (key, label) in enumerate(key_items):
             row = tk.Frame(keys, bg=PANEL)
             row.pack(fill='x', pady=1)
@@ -1067,7 +1072,7 @@ class App(tk.Tk):
         if self.busy:
             return
         self.busy = True
-        for b in (self.btn_r, self.btn_y, self.btn_a): b.state(['disabled'])
+        for b in (self.btn_r, self.btn_y, self.btn_full, self.btn_a): b.state(['disabled'])
         threading.Thread(target=self._bg_wrap, args=(fn,), daemon=True).start()
 
     def _bg_wrap(self, fn):
@@ -1079,7 +1084,7 @@ class App(tk.Tk):
             self.after(0, lambda: messagebox.showerror('YVZTOOLS Error', str(e)))
         finally:
             self.busy = False
-            self.after(0, lambda: [b.state(['!disabled']) for b in (self.btn_r, self.btn_y, self.btn_a)])
+            self.after(0, lambda: [b.state(['!disabled']) for b in (self.btn_r, self.btn_y, self.btn_full, self.btn_a)])
 
     def start_chrome(self):
         def work():
