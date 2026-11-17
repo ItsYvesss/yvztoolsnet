@@ -493,8 +493,11 @@ class App(tk.Tk):
         tk.Label(left, text='COMMAND CENTER', bg=PANEL, fg=TEXT, font=('Segoe UI Semibold', 12)).pack(anchor='w', padx=16, pady=(0, 2))
         tk.Label(left, text='Start a session, scan, then solve', bg=PANEL, fg=MUTED, font=('Segoe UI', 8)).pack(anchor='w', padx=16, pady=(0, 13))
 
-        self.btn_r = RoundedButton(left, '01   START CHROME', self.start_chrome, BLUE, CYAN, height=46, radius=13)
+        self.btn_r = RoundedButton(left, '01   SEPARATE CHROME [R]', self.start_chrome, BLUE, CYAN, height=46, radius=13)
         self.btn_r.pack(fill='x', padx=14, pady=5)
+        self.btn_main = RoundedButton(left, 'CONNECT MAIN CHROME [M]', self.connect_main_chrome,
+                                      PANEL2, BLUE, TEXT, height=42, radius=12)
+        self.btn_main.pack(fill='x', padx=14, pady=5)
         self.btn_y = RoundedButton(left, '02   SCAN QUESTION', self.scan, PANEL2, BLUE, TEXT, height=46, radius=13)
         self.btn_y.pack(fill='x', padx=14, pady=5)
         # One-touch equivalent of keyboard shortcut 1: scan, capture the page,
@@ -526,7 +529,7 @@ class App(tk.Tk):
         tk.Label(left, text='KEYBOARD SHORTCUTS', bg=PANEL, fg=MUTED, font=('Segoe UI Semibold', 8)).pack(anchor='w', padx=16, pady=(15, 5))
         keys = tk.Frame(left, bg=PANEL)
         keys.pack(fill='x', padx=14)
-        key_items = [('1','Auto scan + solve (same as SCAN FULL)'), ('R','Chrome'), ('Y','Scan only'), ('A','Solve scanned'), ('L','Answer output style'), ('2-4','Presets'), ('T','Theme'), ('X','Exit')]
+        key_items = [('1','Auto scan + solve (same as SCAN FULL)'), ('R','Start separate Chrome profile'), ('M','Connect main Chrome on port 9222'), ('Y','Scan only'), ('A','Solve scanned'), ('L','Answer output style'), ('2-4','Presets'), ('T','Theme'), ('X','Exit')]
         for i, (key, label) in enumerate(key_items):
             row = tk.Frame(keys, bg=PANEL)
             row.pack(fill='x', pady=1)
@@ -536,6 +539,9 @@ class App(tk.Tk):
                      font=('Segoe UI', 8)).pack(side='left', padx=8)
 
         self.bind('<r>', lambda e: self.start_chrome())
+        self.bind('<R>', lambda e: self.start_chrome())
+        self.bind('<m>', lambda e: self.connect_main_chrome())
+        self.bind('<M>', lambda e: self.connect_main_chrome())
         self.bind('<y>', lambda e: self.scan())
         self.bind('<a>', lambda e: self.solve())
         self.bind('<x>', lambda e: self.on_exit())
@@ -624,7 +630,7 @@ class App(tk.Tk):
         self.log.pack(fill='both', expand=True, padx=12, pady=(0, 5))
         self.log.configure(state='disabled')
 
-        self.write_log(f'{DISPLAY_VERSION} ready • C Copy answer • L Answer style • R Chrome • Y Scan • A Solve • 1-4 Presets • T Theme')
+        self.write_log(f'{DISPLAY_VERSION} ready • R Separate Chrome • M Main Chrome :9222 • C Copy answer • L Answer style • Y Scan • A Solve • 1-4 Presets • T Theme')
 
     def write_log(self, text):
         self.log.configure(state='normal')
@@ -1072,7 +1078,7 @@ class App(tk.Tk):
         if self.busy:
             return
         self.busy = True
-        for b in (self.btn_r, self.btn_y, self.btn_full, self.btn_a): b.state(['disabled'])
+        for b in (self.btn_r, self.btn_main, self.btn_y, self.btn_full, self.btn_a): b.state(['disabled'])
         threading.Thread(target=self._bg_wrap, args=(fn,), daemon=True).start()
 
     def _bg_wrap(self, fn):
@@ -1084,21 +1090,42 @@ class App(tk.Tk):
             self.after(0, lambda: messagebox.showerror('YVZTOOLS Error', str(e)))
         finally:
             self.busy = False
-            self.after(0, lambda: [b.state(['!disabled']) for b in (self.btn_r, self.btn_y, self.btn_full, self.btn_a)])
+            self.after(0, lambda: [b.state(['!disabled']) for b in (self.btn_r, self.btn_main, self.btn_y, self.btn_full, self.btn_a)])
 
     def start_chrome(self):
+        """R launches the dedicated automation profile without changing the user's main profile."""
         def work():
             if core.debug_port_alive():
                 self.after(0, lambda: self.write_log('Chrome DevTools is already reachable on port 9222.'))
                 return
-            choice = self.ask_chrome_mode()
-            if choice == 'separate':
-                ok = self.launch_separate()
-            else:
-                ok = self.launch_main_setup()
-            self.after(0, lambda: self.write_log('Chrome connected.' if ok else 'Chrome connection not established.'))
+            ok = self.launch_separate()
+            self.after(0, lambda: self.write_log(
+                'Separate Chrome profile connected on port 9222.' if ok
+                else 'Separate Chrome profile could not connect on port 9222.'
+            ))
             if not ok:
-                self.after(0, lambda: messagebox.showwarning('Chrome', 'Could not connect to Chrome on port 9222.'))
+                self.after(0, lambda: messagebox.showwarning(
+                    'Separate Chrome Profile',
+                    'Chrome did not become available on port 9222. Close any old YVZTools Chrome debug window and try again.'
+                ))
+        self.run_bg(work)
+
+    def connect_main_chrome(self):
+        """M checks the main Chrome DevTools endpoint and guides the user through setup."""
+        def work():
+            if core.debug_port_alive():
+                self.after(0, lambda: self.write_log('Main Chrome DevTools is already reachable on port 9222.'))
+                return
+            ok = self.launch_main_setup()
+            self.after(0, lambda: self.write_log(
+                'Main Chrome connected on port 9222.' if ok
+                else 'Main Chrome was not detected on port 9222.'
+            ))
+            if not ok:
+                self.after(0, lambda: messagebox.showwarning(
+                    'Main Chrome Not Connected',
+                    'YVZTools could not detect port 9222. Chrome must have remote debugging enabled for this browser instance and be fully restarted. The separate Chrome profile (R) is the simpler alternative.'
+                ))
         self.run_bg(work)
 
     def ask_chrome_mode(self):
@@ -1132,7 +1159,7 @@ class App(tk.Tk):
         chrome = core.find_chrome_exe()
         if not chrome: return False
         subprocess.Popen([chrome, 'chrome://inspect/#remote-debugging'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        self.after(0, lambda: messagebox.showinfo('One-time Chrome setup', 'In Chrome, enable “Allow remote debugging for this browser instance”, then fully quit and reopen Chrome. The app will wait for port 9222.'))
+        self.after(0, lambda: messagebox.showinfo('Main Chrome • Port 9222', 'Chrome will only expose port 9222 after remote debugging is enabled for this browser instance. Open chrome://inspect/#remote-debugging, enable “Allow remote debugging for this browser instance”, then fully quit and reopen Chrome. YVZTools will check for the port. It will not read or change saved passwords or cookies.'))
         for _ in range(60):
             if core.debug_port_alive(): return True
             time.sleep(.5)
