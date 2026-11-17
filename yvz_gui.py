@@ -493,11 +493,8 @@ class App(tk.Tk):
         tk.Label(left, text='COMMAND CENTER', bg=PANEL, fg=TEXT, font=('Segoe UI Semibold', 12)).pack(anchor='w', padx=16, pady=(0, 2))
         tk.Label(left, text='Start a session, scan, then solve', bg=PANEL, fg=MUTED, font=('Segoe UI', 8)).pack(anchor='w', padx=16, pady=(0, 13))
 
-        self.btn_r = RoundedButton(left, '01   SEPARATE CHROME [R]', self.start_chrome, BLUE, CYAN, height=46, radius=13)
+        self.btn_r = RoundedButton(left, '01   START CHROME [R]', self.start_chrome, BLUE, CYAN, height=46, radius=13)
         self.btn_r.pack(fill='x', padx=14, pady=5)
-        self.btn_main = RoundedButton(left, 'CONNECT MAIN CHROME [M]', self.connect_main_chrome,
-                                      PANEL2, BLUE, TEXT, height=42, radius=12)
-        self.btn_main.pack(fill='x', padx=14, pady=5)
         self.btn_y = RoundedButton(left, '02   SCAN QUESTION', self.scan, PANEL2, BLUE, TEXT, height=46, radius=13)
         self.btn_y.pack(fill='x', padx=14, pady=5)
         # One-touch equivalent of keyboard shortcut 1: scan, capture the page,
@@ -529,7 +526,7 @@ class App(tk.Tk):
         tk.Label(left, text='KEYBOARD SHORTCUTS', bg=PANEL, fg=MUTED, font=('Segoe UI Semibold', 8)).pack(anchor='w', padx=16, pady=(15, 5))
         keys = tk.Frame(left, bg=PANEL)
         keys.pack(fill='x', padx=14)
-        key_items = [('1','Auto scan + solve (same as SCAN FULL)'), ('R','Start separate Chrome profile'), ('M','Connect main Chrome on port 9222'), ('Y','Scan only'), ('A','Solve scanned'), ('L','Answer output style'), ('2-4','Presets'), ('T','Theme'), ('X','Exit')]
+        key_items = [('1','Auto scan + solve (same as SCAN FULL)'), ('R','Start Chrome / choose profile'), ('Y','Scan only'), ('A','Solve scanned'), ('L','Answer output style'), ('2-4','Presets'), ('T','Theme'), ('X','Exit')]
         for i, (key, label) in enumerate(key_items):
             row = tk.Frame(keys, bg=PANEL)
             row.pack(fill='x', pady=1)
@@ -540,8 +537,6 @@ class App(tk.Tk):
 
         self.bind('<r>', lambda e: self.start_chrome())
         self.bind('<R>', lambda e: self.start_chrome())
-        self.bind('<m>', lambda e: self.connect_main_chrome())
-        self.bind('<M>', lambda e: self.connect_main_chrome())
         self.bind('<y>', lambda e: self.scan())
         self.bind('<a>', lambda e: self.solve())
         self.bind('<x>', lambda e: self.on_exit())
@@ -1078,7 +1073,7 @@ class App(tk.Tk):
         if self.busy:
             return
         self.busy = True
-        for b in (self.btn_r, self.btn_main, self.btn_y, self.btn_full, self.btn_a): b.state(['disabled'])
+        for b in (self.btn_r, self.btn_y, self.btn_full, self.btn_a): b.state(['disabled'])
         threading.Thread(target=self._bg_wrap, args=(fn,), daemon=True).start()
 
     def _bg_wrap(self, fn):
@@ -1090,57 +1085,64 @@ class App(tk.Tk):
             self.after(0, lambda: messagebox.showerror('YVZTOOLS Error', str(e)))
         finally:
             self.busy = False
-            self.after(0, lambda: [b.state(['!disabled']) for b in (self.btn_r, self.btn_main, self.btn_y, self.btn_full, self.btn_a)])
+            self.after(0, lambda: [b.state(['!disabled']) for b in (self.btn_r, self.btn_y, self.btn_full, self.btn_a)])
 
     def start_chrome(self):
-        """R launches the dedicated automation profile without changing the user's main profile."""
-        def work():
-            if core.debug_port_alive():
-                self.after(0, lambda: self.write_log('Chrome DevTools is already reachable on port 9222.'))
-                return
-            ok = self.launch_separate()
-            self.after(0, lambda: self.write_log(
-                'Separate Chrome profile connected on port 9222.' if ok
-                else 'Separate Chrome profile could not connect on port 9222.'
-            ))
-            if not ok:
-                self.after(0, lambda: messagebox.showwarning(
-                    'Separate Chrome Profile',
-                    'Chrome did not become available on port 9222. Close any old YVZTools Chrome debug window and try again.'
-                ))
-        self.run_bg(work)
+        """Show the original profile chooser, then start the selected Chrome mode."""
+        win = tk.Toplevel(self)
+        win.title('Start Chrome')
+        win.geometry('480x270')
+        win.resizable(False, False)
+        win.configure(bg=PANEL)
+        win.transient(self)
+        win.grab_set()
 
-    def connect_main_chrome(self):
-        """M checks the main Chrome DevTools endpoint and guides the user through setup."""
-        def work():
-            if core.debug_port_alive():
-                self.after(0, lambda: self.write_log('Main Chrome DevTools is already reachable on port 9222.'))
-                return
-            ok = self.launch_main_setup()
-            self.after(0, lambda: self.write_log(
-                'Main Chrome connected on port 9222.' if ok
-                else 'Main Chrome was not detected on port 9222.'
-            ))
-            if not ok:
-                self.after(0, lambda: messagebox.showwarning(
-                    'Main Chrome Not Connected',
-                    'YVZTools could not detect port 9222. Chrome must have remote debugging enabled for this browser instance and be fully restarted. The separate Chrome profile (R) is the simpler alternative.'
-                ))
-        self.run_bg(work)
+        tk.Label(win, text='START CHROME', bg=PANEL, fg=TEXT,
+                 font=('Segoe UI Semibold', 15)).pack(pady=(22, 5))
+        tk.Label(win, text='Choose which Chrome profile YVZTools should connect to.',
+                 bg=PANEL, fg=MUTED, font=('Segoe UI', 8)).pack(pady=(0, 16))
 
-    def ask_chrome_mode(self):
-        result = {'v': 'separate'}
-        ev = threading.Event()
-        def show():
-            win = tk.Toplevel(self); win.title('Start Chrome'); win.geometry('480x260'); win.configure(bg=PANEL); win.grab_set()
-            tk.Label(win, text='How do you want to connect?', bg=PANEL, fg=TEXT, font=('Segoe UI Semibold', 14)).pack(pady=(22, 5))
-            tk.Label(win, text='Choose the profile mode used by the original tool.', bg=PANEL, fg=MUTED, font=('Segoe UI', 8)).pack(pady=(0, 16))
-            def pick(v): result['v'] = v; win.destroy(); ev.set()
-            ttk.Button(win, text='Main Chrome profile', style='Accent.TButton', command=lambda: pick('main')).pack(fill='x', padx=36, pady=6)
-            ttk.Button(win, text='Separate automation profile', style='Purple.TButton', command=lambda: pick('separate')).pack(fill='x', padx=36, pady=6)
-            ttk.Button(win, text='Cancel', style='Soft.TButton', command=lambda: pick('cancel')).pack(fill='x', padx=36, pady=6)
-        self.after(0, show); ev.wait()
-        return result['v']
+        def choose(mode):
+            win.destroy()
+            if mode == 'cancel':
+                return
+
+            def work():
+                if core.debug_port_alive():
+                    self.after(0, lambda: self.write_log(
+                        'Chrome DevTools is already reachable on port 9222.'
+                    ))
+                    return
+
+                if mode == 'main':
+                    ok = self.launch_main_setup()
+                    label = 'Main Chrome'
+                else:
+                    ok = self.launch_separate()
+                    label = 'Separate Chrome profile'
+
+                self.after(0, lambda: self.write_log(
+                    f'{label} connected on port 9222.' if ok
+                    else f'{label} could not connect on port 9222.'
+                ))
+                if not ok:
+                    message = (
+                        'Enable remote debugging for this Chrome browser instance, then fully quit and reopen Chrome.'
+                        if mode == 'main' else
+                        'Chrome did not become available on port 9222. Close any old YVZTools Chrome debug window and try again.'
+                    )
+                    self.after(0, lambda: messagebox.showwarning(
+                        f'{label} Not Connected', message
+                    ))
+
+            self.run_bg(work)
+
+        ttk.Button(win, text='Main Chrome profile', style='Accent.TButton',
+                   command=lambda: choose('main')).pack(fill='x', padx=36, pady=6)
+        ttk.Button(win, text='Separate automation profile', style='Purple.TButton',
+                   command=lambda: choose('separate')).pack(fill='x', padx=36, pady=6)
+        ttk.Button(win, text='Cancel', style='Soft.TButton',
+                   command=lambda: choose('cancel')).pack(fill='x', padx=36, pady=6)
 
     def launch_separate(self):
         chrome = core.find_chrome_exe()
