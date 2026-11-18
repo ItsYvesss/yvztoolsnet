@@ -2,3 +2,4 @@ requests>=2.31
 websocket-client>=1.8
 pyinstaller>=6.10
 certifi>=2024.8.30
+Pillow>=10.0.0
