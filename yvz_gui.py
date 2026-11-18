@@ -117,6 +117,16 @@ class RoundedButton(tk.Canvas):
         for x, y in ((r, r+yoff), (w-r, r+yoff), (r, h-r-yoff), (w-r, h-r-yoff)):
             self.create_oval(x-r, y-r, x+r, y+r, fill=fill, outline='')
         self.create_rectangle(r+2, yoff+2, w-r-2, h-yoff-2, outline=BLUE if self._hover and self.enabled else '', width=1)
+        try:
+            rainbow_mode = self.winfo_toplevel().theme_name == 'rainbow'
+        except Exception:
+            rainbow_mode = False
+        if rainbow_mode and self.enabled:
+            spectrum = ['#FF3B30', '#FF8A00', '#FFD400', '#35C759', '#24C8FF', '#5856D6', '#BF5AF2']
+            stripe_y0, stripe_y1 = max(4, h-9), max(5, h-5)
+            stripe_w = max(1, (w-12) / len(spectrum))
+            for i, color in enumerate(spectrum):
+                self.create_rectangle(6+i*stripe_w, stripe_y0, 6+(i+1)*stripe_w, stripe_y1, fill=color, outline='')
         self.create_text(w/2, h/2+yoff, text=self.text,
                          fill=self.fg if self.enabled else MUTED,
                          font=('Segoe UI Semibold', 9))
@@ -251,9 +261,9 @@ class App(tk.Tk):
                 'PURPLE':'#9A6BFF','CYAN':'#61D8FF','GREEN':'#4BE3B0','BORDER':'#263C82'
             },
             'pink': {
-                'label':'🌸 COTTON CANDY', 'BG':'#FFF7FB','PANEL':'#FFF0F6','PANEL2':'#FFE4EF',
-                'TEXT':'#3B2130','MUTED':'#9C6B80','ACCENT':'#E85D97',
-                'PURPLE':'#A66AE8','CYAN':'#D94D8E','GREEN':'#3B9D78','BORDER':'#F0B2CA'
+                'label':'🌸 ALL PINK', 'BG':'#FFF4F9','PANEL':'#FFEAF3','PANEL2':'#FFDCEB',
+                'TEXT':'#54263C','MUTED':'#A96F89','ACCENT':'#F05A9D',
+                'PURPLE':'#D94F91','CYAN':'#FF8FBE','GREEN':'#E86FA8','BORDER':'#F3A9C9'
             },
             'hacker': {
                 'label':'☠ HACKER GREEN', 'BG':'#020604','PANEL':'#06110A','PANEL2':'#0A1B10',
@@ -281,9 +291,9 @@ class App(tk.Tk):
                 'PURPLE':'#C77CFF','CYAN':'#67DFFF','GREEN':'#72E0A8','BORDER':'#8C4814'
             },
             'yvl': {
-                'label':'♛ YVL • KING CARSON BLACK LABEL', 'BG':'#08060D','PANEL':'#120F1B','PANEL2':'#211A30',
-                'TEXT':'#FAF8FF','MUTED':'#B6ADC9','ACCENT':'#9B7BFF',
-                'PURPLE':'#B69CFF','CYAN':'#DED2FF','GREEN':'#B9A7EA','BORDER':'#594477'
+                'label':'♛ YVL • BLACK & WHITE', 'BG':'#050505','PANEL':'#101010','PANEL2':'#1B1B1B',
+                'TEXT':'#FFFFFF','MUTED':'#A6A6A6','ACCENT':'#FFFFFF',
+                'PURPLE':'#D8D8D8','CYAN':'#F2F2F2','GREEN':'#D0D0D0','BORDER':'#555555'
             },
             'oreo': {
                 'label':'🍪 OREO • COCOA & CREAM', 'BG':'#F7F3EE','PANEL':'#FFFFFF','PANEL2':'#E8E0D8',
@@ -291,9 +301,9 @@ class App(tk.Tk):
                 'PURPLE':'#8A6B5B','CYAN':'#C5A995','GREEN':'#8C5E48','BORDER':'#C8B9AC'
             },
             'rainbow': {
-                'label':'🌈 RAINBOW', 'BG':'#090718','PANEL':'#130D2B','PANEL2':'#1D153B',
-                'TEXT':'#FFF7FF','MUTED':'#B9ACD9','ACCENT':'#FF5EBB',
-                'PURPLE':'#B56BFF','CYAN':'#42E8FF','GREEN':'#6BFFB8','BORDER':'#713BC2'
+                'label':'🌈 FULL SPECTRUM', 'BG':'#10091B','PANEL':'#1A1028','PANEL2':'#261735',
+                'TEXT':'#FFFFFF','MUTED':'#D2C2E2','ACCENT':'#FF405F',
+                'PURPLE':'#9B59FF','CYAN':'#24C8FF','GREEN':'#FFD43B','BORDER':'#8B4DB5'
             }
         }
         self._apply_theme_constants()
@@ -513,7 +523,7 @@ class App(tk.Tk):
         # One-touch equivalent of keyboard shortcut 1: scan, capture the page,
         # and immediately send the question to Gemini using preset 1.
         self.btn_full = RoundedButton(left, 'SCAN FULL', lambda: self.scan(auto_solve=True),
-                                      GREEN, CYAN, '#07111F', height=48, radius=13)
+                                      BLUE, CYAN, '#FFFFFF', height=48, radius=13)
         self.btn_full.pack(fill='x', padx=14, pady=5)
         self.btn_a = RoundedButton(left, '03   SOLVE WITH GEMINI', self.solve, PURPLE, CYAN, height=46, radius=13)
         self.btn_a.pack(fill='x', padx=14, pady=5)
@@ -626,7 +636,7 @@ class App(tk.Tk):
         self.style_answer_button.pack(side='right', padx=(7, 0))
         copy_fill, copy_hover, copy_text = BLUE, CYAN, 'white'
         if self.theme_name == 'yvl':
-            copy_fill, copy_hover, copy_text = '#8B5CF6', '#A78BFA', '#FFFFFF'
+            copy_fill, copy_hover, copy_text = '#FFFFFF', '#D9D9D9', '#050505'
         elif self.theme_name == 'oreo':
             copy_fill, copy_hover, copy_text = '#3B2923', '#6B5145', '#FFFFFF'
         elif self.theme_name == 'purple':
@@ -1461,8 +1471,8 @@ class YVZSplash(tk.Tk):
     DURATION = 3.65
     PALETTES = {
         'dark':   dict(top='#030614', bot='#0B1233', star='#7FA9FF', ring1='#1B3A8C', ring2='#5B34A0', accent='#4A9BFF', accent2='#9A6BFF', text='#F4F7FF', sub='#61D8FF', muted='#91A1CC', track='#14204D'),
-        'rainbow':dict(top='#090518', bot='#25103A', star='#FF83D8', ring1='#42E8FF', ring2='#B56BFF', accent='#FF5EBB', accent2='#6BFFB8', text='#FFF7FF', sub='#42E8FF', muted='#B9ACD9', track='#241640'),
-        'pink':   dict(top='#FFF8FC', bot='#FFE6F0', star='#E98BB0', ring1='#F2B5CC', ring2='#E5A4C1', accent='#E85D97', accent2='#A66AE8', text='#3B2130', sub='#D94D8E', muted='#9C6B80', track='#F6CFDF'),
+        'rainbow':dict(top='#10091B', bot='#321044', star='#FF405F', ring1='#24C8FF', ring2='#9B59FF', accent='#FF405F', accent2='#FFD43B', text='#FFFFFF', sub='#24C8FF', muted='#D2C2E2', track='#3A214F'),
+        'pink':   dict(top='#FFF4F9', bot='#FFDCEB', star='#F05A9D', ring1='#FF8FBE', ring2='#D94F91', accent='#F05A9D', accent2='#FF8FBE', text='#54263C', sub='#D94F91', muted='#A96F89', track='#F3A9C9'),
         'hacker': dict(top='#010302', bot='#04180B', star='#39FF88', ring1='#0B5E31', ring2='#168C48', accent='#19E66B', accent2='#59FF9A', text='#D7FFE4', sub='#59FF9A', muted='#6EA77D', track='#0A2414'),
         'red':    dict(top='#070203', bot='#25080D', star='#FF526A', ring1='#741526', ring2='#9B263E', accent='#F0445E', accent2='#FF7586', text='#FFF1F2', sub='#FF7586', muted='#B9868D', track='#2A0C12'),
         'oreo':   dict(top='#F7F3EE', bot='#D8CEC4', star='#3B2923', ring1='#6B5145', ring2='#9B8172', accent='#3B2923', accent2='#76665D', text='#241B18', sub='#4B352C', muted='#76665D', track='#C8B9AC'),
@@ -1641,15 +1651,15 @@ def launch_app():
 
     themes = {
         'dark': ('🌌', 'SPACE BLUE', '#4A9BFF', '#050817', '#0B1230'),
-        'pink': ('🌸', 'COTTON CANDY', '#E85D97', '#FFF7FB', '#FFF0F6'),
+        'pink': ('🌸', 'ALL PINK', '#F05A9D', '#FFF4F9', '#FFEAF3'),
         'purple': ('💜', 'NEON PURPLE', '#A66BFF', '#090518', '#120A2B'),
         'chocolate': ('🍫', 'CHOCOLATE', '#C9793D', '#2B0F05', '#4A1F0A'),
         'orange': ('🍊', 'SOLAR ORANGE', '#FF8A2B', '#160A02', '#261306'),
         'hacker': ('☠', 'HACKER GREEN', '#19E66B', '#020604', '#06110A'),
         'red': ('🔥', 'CRIMSON', '#F0445E', '#090304', '#190608'),
-        'yvl': ('◼', 'YVL', '#FFFFFF', '#050505', '#111111'),
+        'yvl': ('◼', 'YVL BLACK & WHITE', '#FFFFFF', '#050505', '#111111'),
         'oreo': ('🍪', 'OREO', '#3B2923', '#F7F3EE', '#FFFFFF'),
-        'rainbow': ('🌈', 'RAINBOW', '#FF5EBB', '#090718', '#130D2B')
+        'rainbow': ('🌈', 'FULL SPECTRUM', '#FF405F', '#10091B', '#1A1028')
     }
 
     selected = {'name': saved if saved in themes else 'dark'}
