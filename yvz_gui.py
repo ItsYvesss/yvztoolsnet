@@ -288,7 +288,7 @@ class App(tk.Tk):
             'chocolate': {
                 'label':'🍫 CHOCOLATE • COCOA & CARAMEL', 'BG':'#241006','PANEL':'#3B1B0B','PANEL2':'#593018',
                 'TEXT':'#FFF4E8','MUTED':'#C9A88D','ACCENT':'#D28A50',
-                'PURPLE':'#D28A50','CYAN':'#F0C69A','GREEN':'#B97843','BORDER':'#80502F'
+                'PURPLE':'#B97843','CYAN':'#F0C69A','GREEN':'#D28A50','BORDER':'#80502F'
             },
             'orange': {
                 'label':'🍊 SOLAR ORANGE', 'BG':'#160A02','PANEL':'#261306','PANEL2':'#3A1D08',
@@ -1664,7 +1664,7 @@ def launch_app():
         'dark': ('🌌', 'SPACE BLUE', '#4A9BFF', '#050817', '#0B1230'),
         'pink': ('🌸', 'ALL PINK', '#F05A9D', '#FFF4F9', '#FFEAF3'),
         'purple': ('💜', 'NEON PURPLE', '#A66BFF', '#090518', '#120A2B'),
-        'chocolate': ('🍫', 'CHOCOLATE', '#C9793D', '#2B0F05', '#4A1F0A'),
+        'chocolate': ('🍫', 'CHOCOLATE • COCOA', '#D28A50', '#241006', '#3B1B0B'),
         'orange': ('🍊', 'SOLAR ORANGE', '#FF8A2B', '#160A02', '#261306'),
         'hacker': ('☠', 'HACKER GREEN', '#19E66B', '#020604', '#06110A'),
         'red': ('🔥', 'CRIMSON', '#F0445E', '#090304', '#190608'),
