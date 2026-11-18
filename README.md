@@ -39,7 +39,7 @@ YVZTOOLS/
 - 🌐 START CHROME (R) opens a profile chooser for Main Chrome or a separate automation profile, both using the port 9222 connection workflow
 - 🧠 Smart question solving
 - 🌐 Chrome/DevTools integration
-- 🎨 v6.4 theme polish: Oreo uses cocoa-and-cream colors without green accents; YVL adds royal-purple details, King Carson crown branding, supplied artwork, and a larger high-contrast Copy Answer button
+- 🎨 v6.4: Chocolate theme uses cocoa, caramel, and cream tones with no purple accents; restored the official YVZTools logo in the app header, title bar, and taskbar
 - 🌓 Copy Answer uses theme-aware high-contrast colors for readability
 - 🎨 Multiple themes and answer-style customization
 - ⌨️ Keyboard shortcuts for fast workflows
