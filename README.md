@@ -29,7 +29,7 @@ YVZTOOLS/
 
 ## Features
 
-- 🌌 YVZTools NetMath Space dashboard (v6.1)
+- 🌌 YVZTools NetMath Space dashboard (v6.2)
 - 🪟 Responsive window resizing with adaptive header spacing to prevent UI overlap
 - 🔄 Update status checks GitHub every 10 seconds and shows UP TO DATE or UPDATE AVAILABLE
 - 🚀 Cinematic v5.8 startup sequence with layered space glow, orbiting reactor, drifting particles, and eased progress animation
@@ -39,6 +39,8 @@ YVZTOOLS/
 - 🌐 START CHROME (R) opens a profile chooser for Main Chrome or a separate automation profile, both using the port 9222 connection workflow
 - 🧠 Smart question solving
 - 🌐 Chrome/DevTools integration
+- 🎨 v6.2 theme revamp: Oreo is cocoa-only, Neon Purple uses a purple-only accent system, and YVL gets a monochrome black-label design with your supplied artwork and crown branding
+- 🌓 Copy Answer uses theme-aware high-contrast colors for readability
 - 🎨 Multiple themes and answer-style customization
 - ⌨️ Keyboard shortcuts for fast workflows
 - 🔄 Built-in updater with automatic version checks

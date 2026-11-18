@@ -268,7 +268,7 @@ class App(tk.Tk):
             'purple': {
                 'label':'💜 NEON PURPLE', 'BG':'#090518','PANEL':'#120A2B','PANEL2':'#1B1040',
                 'TEXT':'#F4EEFF','MUTED':'#A99AC7','ACCENT':'#A66BFF',
-                'PURPLE':'#C08CFF','CYAN':'#7EDCFF','GREEN':'#65E6B5','BORDER':'#54309A'
+                'PURPLE':'#C9A8FF','CYAN':'#A98BFF','GREEN':'#B99AFF','BORDER':'#54309A'
             },
             'chocolate': {
                 'label':'🍫 CHOCOLATE', 'BG':'#2B0F05','PANEL':'#4A1F0A','PANEL2':'#6B2E0C',
@@ -281,14 +281,14 @@ class App(tk.Tk):
                 'PURPLE':'#C77CFF','CYAN':'#67DFFF','GREEN':'#72E0A8','BORDER':'#8C4814'
             },
             'yvl': {
-                'label':'◼ YVL', 'BG':'#050505','PANEL':'#111111','PANEL2':'#202020',
-                'TEXT':'#FFFFFF','MUTED':'#AAAAAA','ACCENT':'#FFFFFF',
-                'PURPLE':'#CCCCCC','CYAN':'#E6E6E6','GREEN':'#BFBFBF','BORDER':'#444444'
+                'label':'♛ YVL • BLACK LABEL', 'BG':'#050505','PANEL':'#101010','PANEL2':'#1D1D1D',
+                'TEXT':'#F5F5F5','MUTED':'#A0A0A0','ACCENT':'#D8D8D8',
+                'PURPLE':'#AFAFAF','CYAN':'#EEEEEE','GREEN':'#888888','BORDER':'#454545'
             },
             'oreo': {
                 'label':'🍪 OREO', 'BG':'#F7F3EE','PANEL':'#FFFFFF','PANEL2':'#E8E0D8',
                 'TEXT':'#241B18','MUTED':'#76665D','ACCENT':'#3B2923',
-                'PURPLE':'#6B5145','CYAN':'#9B8172','GREEN':'#4D7660','BORDER':'#C8B9AC'
+                'PURPLE':'#8A6B5B','CYAN':'#B99C89','GREEN':'#8A6B5B','BORDER':'#C8B9AC'
             },
             'rainbow': {
                 'label':'🌈 RAINBOW', 'BG':'#090718','PANEL':'#130D2B','PANEL2':'#1D153B',
@@ -432,10 +432,11 @@ class App(tk.Tk):
         style.configure('Sub.TLabel', background=BG, foreground=MUTED, font=('Segoe UI', 8))
         style.configure('Card.TFrame', background=PANEL)
         style.configure('Card2.TFrame', background=PANEL2)
-        style.configure('Accent.TButton', font=('Segoe UI Semibold', 8), foreground='white', background=BLUE, padding=(8, 6), borderwidth=0)
-        style.map('Accent.TButton', background=[('active', CYAN), ('disabled', PANEL2)])
-        style.configure('Purple.TButton', font=('Segoe UI Semibold', 8), foreground='white', background=PURPLE, padding=(8, 6), borderwidth=0)
-        style.map('Purple.TButton', background=[('active', CYAN), ('disabled', PANEL2)])
+        accent_text = '#111111' if self.theme_name == 'yvl' else 'white'
+        style.configure('Accent.TButton', font=('Segoe UI Semibold', 8), foreground=accent_text, background=BLUE, padding=(8, 6), borderwidth=0)
+        style.map('Accent.TButton', foreground=[('disabled', MUTED)], background=[('active', CYAN), ('disabled', PANEL2)])
+        style.configure('Purple.TButton', font=('Segoe UI Semibold', 8), foreground=accent_text, background=PURPLE, padding=(8, 6), borderwidth=0)
+        style.map('Purple.TButton', foreground=[('disabled', MUTED)], background=[('active', CYAN), ('disabled', PANEL2)])
         style.configure('Soft.TButton', font=('Segoe UI Semibold', 8), foreground=TEXT, background=PANEL2, padding=(8, 6), borderwidth=0)
         style.map('Soft.TButton', background=[('active', BLUE), ('disabled', PANEL)])
 
@@ -455,14 +456,26 @@ class App(tk.Tk):
         self.header_frame = top
         title_row = tk.Frame(top, bg=BG)
         title_row.pack(fill='x')
-        brand_mark = tk.Frame(title_row, bg=BLUE, width=42, height=42, highlightthickness=1, highlightbackground=CYAN)
-        brand_mark.pack(side='left', padx=(0, 11))
-        brand_mark.pack_propagate(False)
-        tk.Label(brand_mark, text='Y', bg=BLUE, fg='white', font=('Segoe UI Black', 23)).pack(expand=True)
+        if self.theme_name == 'yvl':
+            try:
+                self._yvl_theme_photo = tk.PhotoImage(file=str(BASE / 'assets' / 'yvl_theme_art.gif'))
+                tk.Label(title_row, image=self._yvl_theme_photo, bg=BG,
+                         highlightthickness=1, highlightbackground='#777777').pack(side='left', padx=(0, 11))
+            except Exception:
+                self._yvl_theme_photo = None
+                brand_mark = tk.Frame(title_row, bg='#D8D8D8', width=42, height=42, highlightthickness=1, highlightbackground='#777777')
+                brand_mark.pack(side='left', padx=(0, 11)); brand_mark.pack_propagate(False)
+                tk.Label(brand_mark, text='♛', bg='#D8D8D8', fg='#111111', font=('Segoe UI Symbol', 22)).pack(expand=True)
+        else:
+            self._yvl_theme_photo = None
+            brand_mark = tk.Frame(title_row, bg=BLUE, width=42, height=42, highlightthickness=1, highlightbackground=CYAN)
+            brand_mark.pack(side='left', padx=(0, 11)); brand_mark.pack_propagate(False)
+            tk.Label(brand_mark, text='Y', bg=BLUE, fg='white', font=('Segoe UI Black', 23)).pack(expand=True)
         brand_text = tk.Frame(title_row, bg=BG)
         brand_text.pack(side='left', pady=(1, 0))
         tk.Label(brand_text, text='YVZTOOLS', bg=BG, fg=TEXT, font=('Segoe UI Black', 22)).pack(anchor='w')
-        tk.Label(brand_text, text='NETMATH SPACE  /  DESKTOP CONTROL CENTER', bg=BG, fg=BLUE, font=('Segoe UI Semibold', 8)).pack(anchor='w', pady=(0, 1))
+        tagline = '♛ YVL • BLACK LABEL MODE' if self.theme_name == 'yvl' else 'NETMATH SPACE  /  DESKTOP CONTROL CENTER'
+        tk.Label(brand_text, text=tagline, bg=BG, fg=BLUE, font=('Segoe UI Semibold', 8)).pack(anchor='w', pady=(0, 1))
         # Version and update status stay in the existing header.
         update_cluster = tk.Frame(title_row, bg=BG)
         self.header_update_cluster = update_cluster
@@ -611,8 +624,15 @@ class App(tk.Tk):
         self.style_answer_button = RoundedButton(solhead, 'STYLE [L]', self.edit_answer_style,
                                                 PANEL2, PURPLE, TEXT, height=27, radius=10, width=94)
         self.style_answer_button.pack(side='right', padx=(7, 0))
+        copy_fill, copy_hover, copy_text = BLUE, CYAN, 'white'
+        if self.theme_name == 'yvl':
+            copy_fill, copy_hover, copy_text = '#E6E6E6', '#FFFFFF', '#111111'
+        elif self.theme_name == 'oreo':
+            copy_fill, copy_hover, copy_text = '#3B2923', '#6B5145', '#FFFFFF'
+        elif self.theme_name == 'purple':
+            copy_fill, copy_hover, copy_text = '#7540C5', '#9A68E8', '#FFFFFF'
         self.copy_answer_button = RoundedButton(solhead, 'COPY ANSWER [C]', self.copy_answer,
-                                                BLUE, CYAN, height=27, radius=10, width=142)
+                                                copy_fill, copy_hover, copy_text, height=29, radius=10, width=150)
         self.copy_answer_button.pack(side='right')
 
         # Activity footer
@@ -625,7 +645,7 @@ class App(tk.Tk):
         self.log.pack(fill='both', expand=True, padx=12, pady=(0, 5))
         self.log.configure(state='disabled')
 
-        self.write_log(f'{DISPLAY_VERSION} ready • R Separate Chrome • M Main Chrome :9222 • C Copy answer • L Answer style • Y Scan • A Solve • 1-4 Presets • T Theme')
+        self.write_log(f'{DISPLAY_VERSION} ready • R Start Chrome • C Copy answer • L Answer style • Y Scan • A Solve • 1-4 Presets • T Theme')
 
     def write_log(self, text):
         self.log.configure(state='normal')
