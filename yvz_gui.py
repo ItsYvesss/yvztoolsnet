@@ -183,7 +183,7 @@ class SpaceBackground(tk.Canvas):
             'purple': ([('#090518',0.0),('#110822',.25),('#190D32',.55),('#241047',1.0)], '#C08CFF','#54309A','#7D4AC2'),
             'hacker': ([('#010302',0.0),('#031008',.3),('#04160A',.62),('#020905',1.0)], '#39FF88','#0B5E31','#168C48'),
             'red': ([('#070203',0.0),('#130407',.3),('#22070B',.62),('#090304',1.0)], '#FF526A','#741526','#9B263E'),
-            'yvl': ([('#050505',0.0),('#111111',.3),('#202020',.62),('#080808',1.0)], '#FFFFFF','#666666','#AAAAAA'),
+            'yvl': ([('#08060D',0.0),('#120F1B',.3),('#211A30',.62),('#09070F',1.0)], '#B69CFF','#594477','#9B7BFF'),
             'oreo': ([('#F7F3EE',0.0),('#E7E0D8',.3),('#C9BFB4',.62),('#F7F3EE',1.0)], '#3B2923','#6B5145','#241B18')
         }
         bands, star, arc1, arc2 = palettes.get(theme, palettes['dark'])
@@ -281,14 +281,14 @@ class App(tk.Tk):
                 'PURPLE':'#C77CFF','CYAN':'#67DFFF','GREEN':'#72E0A8','BORDER':'#8C4814'
             },
             'yvl': {
-                'label':'♛ YVL • BLACK LABEL', 'BG':'#050505','PANEL':'#101010','PANEL2':'#1D1D1D',
-                'TEXT':'#F5F5F5','MUTED':'#A0A0A0','ACCENT':'#D8D8D8',
-                'PURPLE':'#AFAFAF','CYAN':'#EEEEEE','GREEN':'#888888','BORDER':'#454545'
+                'label':'♛ YVL • KING CARSON BLACK LABEL', 'BG':'#08060D','PANEL':'#120F1B','PANEL2':'#211A30',
+                'TEXT':'#FAF8FF','MUTED':'#B6ADC9','ACCENT':'#9B7BFF',
+                'PURPLE':'#B69CFF','CYAN':'#DED2FF','GREEN':'#B9A7EA','BORDER':'#594477'
             },
             'oreo': {
-                'label':'🍪 OREO', 'BG':'#F7F3EE','PANEL':'#FFFFFF','PANEL2':'#E8E0D8',
+                'label':'🍪 OREO • COCOA & CREAM', 'BG':'#F7F3EE','PANEL':'#FFFFFF','PANEL2':'#E8E0D8',
                 'TEXT':'#241B18','MUTED':'#76665D','ACCENT':'#3B2923',
-                'PURPLE':'#8A6B5B','CYAN':'#B99C89','GREEN':'#8A6B5B','BORDER':'#C8B9AC'
+                'PURPLE':'#8A6B5B','CYAN':'#C5A995','GREEN':'#8C5E48','BORDER':'#C8B9AC'
             },
             'rainbow': {
                 'label':'🌈 RAINBOW', 'BG':'#090718','PANEL':'#130D2B','PANEL2':'#1D153B',
@@ -474,7 +474,7 @@ class App(tk.Tk):
         brand_text = tk.Frame(title_row, bg=BG)
         brand_text.pack(side='left', pady=(1, 0))
         tk.Label(brand_text, text='YVZTOOLS', bg=BG, fg=TEXT, font=('Segoe UI Black', 22)).pack(anchor='w')
-        tagline = '♛ YVL • BLACK LABEL MODE' if self.theme_name == 'yvl' else 'NETMATH SPACE  /  DESKTOP CONTROL CENTER'
+        tagline = '♛ KING CARSON • YVL BLACK LABEL' if self.theme_name == 'yvl' else 'NETMATH SPACE  /  DESKTOP CONTROL CENTER'
         tk.Label(brand_text, text=tagline, bg=BG, fg=BLUE, font=('Segoe UI Semibold', 8)).pack(anchor='w', pady=(0, 1))
         # Version and update status stay in the existing header.
         update_cluster = tk.Frame(title_row, bg=BG)
@@ -626,14 +626,14 @@ class App(tk.Tk):
         self.style_answer_button.pack(side='right', padx=(7, 0))
         copy_fill, copy_hover, copy_text = BLUE, CYAN, 'white'
         if self.theme_name == 'yvl':
-            copy_fill, copy_hover, copy_text = '#E6E6E6', '#FFFFFF', '#111111'
+            copy_fill, copy_hover, copy_text = '#8B5CF6', '#A78BFA', '#FFFFFF'
         elif self.theme_name == 'oreo':
             copy_fill, copy_hover, copy_text = '#3B2923', '#6B5145', '#FFFFFF'
         elif self.theme_name == 'purple':
             copy_fill, copy_hover, copy_text = '#7540C5', '#9A68E8', '#FFFFFF'
         self.copy_answer_button = RoundedButton(solhead, 'COPY ANSWER [C]', self.copy_answer,
-                                                copy_fill, copy_hover, copy_text, height=29, radius=10, width=150)
-        self.copy_answer_button.pack(side='right')
+                                                copy_fill, copy_hover, copy_text, height=35, radius=10, width=174)
+        self.copy_answer_button.pack(side='right', padx=(6, 0))
 
         # Activity footer
         logcard = tk.Frame(right, bg=PANEL2, highlightbackground=border, highlightthickness=1)
