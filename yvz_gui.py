@@ -188,7 +188,7 @@ class SpaceBackground(tk.Canvas):
             'dark': ([('#040714',0.0),('#071129',.25),('#0B1433',.52),('#17103A',.78),('#06091C',1.0)], '#77A5FF','#254BA5','#6337A0'),
             'rainbow': ([('#10051F',0.0),('#190A2C',.25),('#101832',.52),('#25103A',.78),('#08091C',1.0)], '#FF83D8','#42E8FF','#B56BFF'),
             'pink': ([('#FFF8FC',0.0),('#FFF1F7',.25),('#FFE8F1',.55),('#FFF7FB',1.0)], '#E88CAF','#F4B8D0','#E5A4C1'),
-            'chocolate': ([('#2B0F05',0.0),('#4A1F0A',.25),('#6B2E0C',.55),('#3A1205',1.0)], '#FFD0A3','#9A4D1A','#D9782B'),
+            'chocolate': ([('#241006',0.0),('#3B1B0B',.25),('#593018',.55),('#2D1308',1.0)], '#FFE0BD','#A65A2A','#C47A43'),
             'orange': ([('#160A02',0.0),('#221005',.25),('#321607',.55),('#431F09',1.0)], '#FFB15C','#8C4814','#C55D13'),
             'purple': ([('#090518',0.0),('#110822',.25),('#190D32',.55),('#241047',1.0)], '#C08CFF','#54309A','#7D4AC2'),
             'hacker': ([('#010302',0.0),('#031008',.3),('#04160A',.62),('#020905',1.0)], '#39FF88','#0B5E31','#168C48'),
@@ -240,11 +240,16 @@ class App(tk.Tk):
         self.bind('<F11>', self._toggle_fullscreen)
         self.bind('<Escape>', lambda e: self._toggle_fullscreen(force=False) if self._fullscreen else None)
         self.configure(bg=BG)
-        # YVZTOOLS square blue logo for the window/taskbar icon.
+        # Use the actual YVZTools brand icon for both the title bar and Windows taskbar.
         try:
             self.iconbitmap(str(BASE / 'yvztools.ico'))
-        except Exception:
+        except (tk.TclError, OSError):
             pass
+        try:
+            self._window_icon_img = tk.PhotoImage(file=str(BASE / 'yvztools_logo.png'))
+            self.iconphoto(True, self._window_icon_img)
+        except (tk.TclError, OSError):
+            self._window_icon_img = None
         self.protocol('WM_DELETE_WINDOW', self.on_exit)
         self.last_extracted = None
         self.last_tab = None
@@ -281,9 +286,9 @@ class App(tk.Tk):
                 'PURPLE':'#C9A8FF','CYAN':'#A98BFF','GREEN':'#B99AFF','BORDER':'#54309A'
             },
             'chocolate': {
-                'label':'🍫 CHOCOLATE', 'BG':'#2B0F05','PANEL':'#4A1F0A','PANEL2':'#6B2E0C',
-                'TEXT':'#FFF3E8','MUTED':'#B99A86','ACCENT':'#C9793D',
-                'PURPLE':'#B46AE8','CYAN':'#E4B07A','GREEN':'#8ED49A','BORDER':'#70401F'
+                'label':'🍫 CHOCOLATE • COCOA & CARAMEL', 'BG':'#241006','PANEL':'#3B1B0B','PANEL2':'#593018',
+                'TEXT':'#FFF4E8','MUTED':'#C9A88D','ACCENT':'#D28A50',
+                'PURPLE':'#D28A50','CYAN':'#F0C69A','GREEN':'#B97843','BORDER':'#80502F'
             },
             'orange': {
                 'label':'🍊 SOLAR ORANGE', 'BG':'#160A02','PANEL':'#261306','PANEL2':'#3A1D08',
@@ -478,9 +483,15 @@ class App(tk.Tk):
                 tk.Label(brand_mark, text='♛', bg='#D8D8D8', fg='#111111', font=('Segoe UI Symbol', 22)).pack(expand=True)
         else:
             self._yvl_theme_photo = None
-            brand_mark = tk.Frame(title_row, bg=BLUE, width=42, height=42, highlightthickness=1, highlightbackground=CYAN)
-            brand_mark.pack(side='left', padx=(0, 11)); brand_mark.pack_propagate(False)
-            tk.Label(brand_mark, text='Y', bg=BLUE, fg='white', font=('Segoe UI Black', 23)).pack(expand=True)
+            try:
+                self._brand_icon_source = tk.PhotoImage(file=str(BASE / 'yvztools_logo.png'))
+                self._brand_icon_img = self._brand_icon_source.subsample(12, 12)
+                tk.Label(title_row, image=self._brand_icon_img, bg=BG, bd=0).pack(side='left', padx=(0, 11))
+            except (tk.TclError, OSError):
+                self._brand_icon_source = None
+                brand_mark = tk.Frame(title_row, bg=BLUE, width=42, height=42, highlightthickness=1, highlightbackground=CYAN)
+                brand_mark.pack(side='left', padx=(0, 11)); brand_mark.pack_propagate(False)
+                tk.Label(brand_mark, text='Y', bg=BLUE, fg='white', font=('Segoe UI Black', 23)).pack(expand=True)
         brand_text = tk.Frame(title_row, bg=BG)
         brand_text.pack(side='left', pady=(1, 0))
         tk.Label(brand_text, text='YVZTOOLS', bg=BG, fg=TEXT, font=('Segoe UI Black', 22)).pack(anchor='w')
