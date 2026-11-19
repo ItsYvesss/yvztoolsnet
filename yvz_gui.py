@@ -1177,78 +1177,161 @@ class App(tk.Tk):
             self.after(0, lambda: [b.state(['!disabled']) for b in (self.btn_r, self.btn_y, self.btn_full, self.btn_a)])
 
     def start_chrome(self):
-        """Show the original profile chooser, then start the selected Chrome mode."""
+        """Open the two-step Scolab launcher: Chrome profile, then platform."""
         win = tk.Toplevel(self)
-        win.title('Start Chrome')
-        win.geometry('480x270')
+        win.title('YVZTOOLS • Choose Chrome Profile')
+        win.geometry('500x330')
         win.resizable(False, False)
         win.configure(bg=PANEL)
         win.transient(self)
         win.grab_set()
 
-        tk.Label(win, text='START CHROME', bg=PANEL, fg=TEXT,
-                 font=('Segoe UI Semibold', 15)).pack(pady=(22, 5))
-        tk.Label(win, text='Choose which Chrome profile YVZTools should connect to.',
-                 bg=PANEL, fg=MUTED, font=('Segoe UI', 8)).pack(pady=(0, 16))
+        tk.Label(win, text='CHOOSE CHROME PROFILE', bg=PANEL, fg=TEXT,
+                 font=('Segoe UI Semibold', 15)).pack(pady=(24, 5))
+        tk.Label(win, text='Choose which Chrome profile should open Scolab.',
+                 bg=PANEL, fg=MUTED, font=('Segoe UI', 9)).pack(pady=(0, 18))
 
         def choose(mode):
             win.destroy()
-            if mode == 'cancel':
-                return
+            self.choose_scolab_platform(mode)
+
+        ttk.Button(win, text='MAIN PROFILE',
+                   style='Accent.TButton',
+                   command=lambda: choose('main')).pack(fill='x', padx=42, pady=7, ipady=8)
+        tk.Label(win, text='Uses the YVZTools Main Chrome profile',
+                 bg=PANEL, fg=MUTED, font=('Segoe UI', 8)).pack(pady=(0, 8))
+        ttk.Button(win, text='SEPARATE PROFILE',
+                   style='Purple.TButton',
+                   command=lambda: choose('separate')).pack(fill='x', padx=42, pady=7, ipady=8)
+        tk.Label(win, text='Uses a separate Chrome profile just for YVZTools',
+                 bg=PANEL, fg=MUTED, font=('Segoe UI', 8)).pack(pady=(0, 8))
+        ttk.Button(win, text='CANCEL', style='Soft.TButton',
+                   command=win.destroy).pack(fill='x', padx=42, pady=(12, 18))
+
+    def choose_scolab_platform(self, mode):
+        """Show Netmath / Net français after the user selects a Chrome profile."""
+        win = tk.Toplevel(self)
+        win.title('YVZTOOLS • Select Scolab Platform')
+        win.geometry('520x350')
+        win.resizable(False, False)
+        win.configure(bg=PANEL)
+        win.transient(self)
+        win.grab_set()
+
+        tk.Label(win, text='SELECT A PLATFORM', bg=PANEL, fg=TEXT,
+                 font=('Segoe UI Semibold', 15)).pack(pady=(24, 5))
+        profile_label = 'Main Profile' if mode == 'main' else 'Separate Profile'
+        tk.Label(win, text=f'Chrome profile: {profile_label}',
+                 bg=PANEL, fg=MUTED, font=('Segoe UI', 9)).pack(pady=(0, 18))
+
+        platforms = [
+            ('NETMATH', 'Mathematics collections',
+             'https://app.scolab.com/netmath/fr/bibliotheque/collections', 'Accent.TButton'),
+            ('NET FRANÇAIS', 'French collections',
+             'https://app.scolab.com/netfrancais/fr/bibliotheque/collections', 'Purple.TButton'),
+        ]
+
+        def launch(url, platform_name):
+            win.destroy()
 
             def work():
                 if core.debug_port_alive():
+                    active_mode = core.load_config().get('active_chrome_profile')
+                    if active_mode != mode:
+                        self.after(0, lambda: messagebox.showwarning(
+                            'Chrome Profile Already Running',
+                            'A different or unmanaged YVZTools Chrome profile is already connected on port 9222. '
+                            'Close that YVZTools Chrome window completely, then press R and try again.'
+                        ))
+                        return
+                    if not self.open_debug_chrome_tab(url):
+                        raise RuntimeError('Chrome is connected, but YVZTools could not open the selected Scolab page.')
                     self.after(0, lambda: self.write_log(
-                        'Chrome DevTools is already reachable on port 9222.'
+                        f'{platform_name} opened in the connected {profile_label}.'
                     ))
                     return
 
                 if mode == 'main':
-                    ok = self.launch_main_setup()
-                    label = 'Main Chrome'
+                    ok = self.launch_main_setup(url)
                 else:
-                    ok = self.launch_separate()
-                    label = 'Separate Chrome profile'
+                    ok = self.launch_separate(url)
 
-                self.after(0, lambda: self.write_log(
-                    f'{label} connected on port 9222.' if ok
-                    else f'{label} could not connect on port 9222.'
-                ))
-                if not ok:
-                    message = (
-                        'Enable remote debugging for this Chrome browser instance, then fully quit and reopen Chrome.'
-                        if mode == 'main' else
-                        'Chrome did not become available on port 9222. Close any old YVZTools Chrome debug window and try again.'
-                    )
+                if ok:
+                    cfg = core.load_config()
+                    cfg['active_chrome_profile'] = mode
+                    cfg['active_chrome_url'] = url
+                    core.save_config(cfg)
+                    self.after(0, lambda: self.write_log(
+                        f'{platform_name} opened in the {profile_label}.'
+                    ))
+                else:
                     self.after(0, lambda: messagebox.showwarning(
-                        f'{label} Not Connected', message
+                        'Chrome Not Connected',
+                        f'Chrome did not become available on port 9222. Check that Chrome opened correctly, then try again.'
+                    ))
+                    self.after(0, lambda: self.write_log(
+                        f'{platform_name} could not connect through the {profile_label}.'
                     ))
 
             self.run_bg(work)
 
-        ttk.Button(win, text='Main Chrome profile', style='Accent.TButton',
-                   command=lambda: choose('main')).pack(fill='x', padx=36, pady=6)
-        ttk.Button(win, text='Separate automation profile', style='Purple.TButton',
-                   command=lambda: choose('separate')).pack(fill='x', padx=36, pady=6)
-        ttk.Button(win, text='Cancel', style='Soft.TButton',
-                   command=lambda: choose('cancel')).pack(fill='x', padx=36, pady=6)
+        for name, description, url, style in platforms:
+            card = tk.Frame(win, bg=PANEL2, highlightbackground=self.themes[self.theme_name]['BORDER'],
+                            highlightthickness=1, padx=14, pady=12)
+            card.pack(fill='x', padx=32, pady=7)
+            details = tk.Frame(card, bg=PANEL2)
+            details.pack(side='left', fill='x', expand=True)
+            tk.Label(details, text=name, bg=PANEL2, fg=TEXT,
+                     font=('Segoe UI Semibold', 10)).pack(anchor='w')
+            tk.Label(details, text=description, bg=PANEL2, fg=MUTED,
+                     font=('Segoe UI', 8)).pack(anchor='w', pady=(3, 0))
+            ttk.Button(card, text='OPEN', style=style,
+                       command=lambda u=url, n=name: launch(u, n)).pack(side='right', padx=(12, 0))
 
-    def launch_separate(self):
+        ttk.Button(win, text='BACK', style='Soft.TButton',
+                   command=lambda: (win.destroy(), self.start_chrome())).pack(fill='x', padx=32, pady=(12, 18))
+
+    def open_debug_chrome_tab(self, url):
+        """Open a new tab through the already-connected Chrome DevTools endpoint."""
+        encoded_url = urllib.parse.quote(url, safe='')
+        endpoint = f'http://{core.DEBUG_HOST}:{core.DEBUG_PORT}/json/new?{encoded_url}'
+        request = urllib.request.Request(endpoint, method='PUT')
+        with urllib.request.urlopen(request, timeout=4) as response:
+            return response.status == 200
+
+    def launch_separate(self, url):
         chrome = core.find_chrome_exe()
         if not chrome:
             self.after(0, lambda: messagebox.showerror('Chrome', 'chrome.exe could not be located.'))
             return False
-        core.ensure_app_dir(); os.makedirs(core.CHROME_PROFILE_DIR, exist_ok=True)
-        args = [chrome, f'--remote-debugging-port={core.DEBUG_PORT}', f'--user-data-dir={core.CHROME_PROFILE_DIR}', '--remote-allow-origins=*', '--no-first-run', '--no-default-browser-check', 'https://www.netmath.ca']
-        subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        core.ensure_app_dir()
+        os.makedirs(core.CHROME_PROFILE_DIR, exist_ok=True)
+        args = [
+            chrome,
+            f'--remote-debugging-port={core.DEBUG_PORT}',
+            f'--user-data-dir={core.CHROME_PROFILE_DIR}',
+            '--remote-allow-origins=*',
+            '--no-first-run',
+            '--no-default-browser-check',
+            url,
+        ]
+        try:
+            flags = getattr(subprocess, 'DETACHED_PROCESS', 0x00000008) | getattr(subprocess, 'CREATE_NEW_PROCESS_GROUP', 0x00000200)
+            subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                             stdin=subprocess.DEVNULL,
+                             creationflags=flags if os.name == 'nt' else 0, close_fds=True)
+        except OSError as exc:
+            self.after(0, lambda: messagebox.showerror('Chrome Launch Failed', str(exc)))
+            return False
         for _ in range(40):
-            if core.debug_port_alive(): return True
+            if core.debug_port_alive():
+                return True
             time.sleep(.5)
         return False
 
-    def launch_main_setup(self):
-        """Launch Chrome with the requested local debugging profile without leaving a console open."""
-        chrome = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+    def launch_main_setup(self, url):
+        """Launch the configured Main Chrome profile without leaving a console open."""
+        chrome = r'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
         if not os.path.isfile(chrome):
             chrome = core.find_chrome_exe()
         if not chrome or not os.path.isfile(chrome):
@@ -1258,15 +1341,15 @@ class App(tk.Tk):
             ))
             return False
 
-        debug_profile = r"C:\ChromeDebugProfile"
+        debug_profile = r'C:\\ChromeDebugProfile'
         os.makedirs(debug_profile, exist_ok=True)
         args = [
             chrome,
-            '--remote-debugging-port=9222',
+            f'--remote-debugging-port={core.DEBUG_PORT}',
             f'--user-data-dir={debug_profile}',
+            url,
         ]
         try:
-            # Launch Chrome directly as a detached GUI process. No CMD window remains open.
             flags = getattr(subprocess, 'DETACHED_PROCESS', 0x00000008) | getattr(subprocess, 'CREATE_NEW_PROCESS_GROUP', 0x00000200)
             subprocess.Popen(
                 args,
