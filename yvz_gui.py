@@ -1,5 +1,6 @@
 import os
 import sys
+import ctypes
 import json
 import time
 import threading
@@ -545,7 +546,7 @@ class App(tk.Tk):
             self._yvl_theme_photo = None
             try:
                 self._brand_icon_source = tk.PhotoImage(file=str(BASE / 'yvztools_logo.png'))
-                self._brand_icon_img = self._brand_icon_source.subsample(7, 7)
+                self._brand_icon_img = self._brand_icon_source.subsample(5, 5)
                 tk.Label(title_row, image=self._brand_icon_img, bg=BG, bd=0).pack(side='left', padx=(0, 13))
             except (tk.TclError, OSError):
                 self._brand_icon_source = None
@@ -561,19 +562,21 @@ class App(tk.Tk):
         update_cluster = tk.Frame(title_row, bg=BG)
         self.header_update_cluster = update_cluster
         update_cluster.pack(side='right', pady=3)
-        tk.Label(update_cluster, text=DISPLAY_VERSION.upper(), bg=PANEL2, fg=CYAN,
-                 font=('Segoe UI Semibold', 8), padx=10, pady=4).pack(side='left', padx=(0, 6))
+        # Keep the refresh control directly beside (and to the left of) the
+        # update-status counter so it never drops underneath the status text.
         self.refresh_update_button = RoundedButton(
-            update_cluster, '↻', lambda: self.check_update_status(force=True),
-            PANEL2, CYAN, height=25, radius=8, width=30
+            update_cluster, '⟳', lambda: self.check_update_status(force=True),
+            PANEL2, CYAN, height=28, radius=9, width=34
         )
-        self.refresh_update_button.pack(side='left', padx=(0, 4))
+        self.refresh_update_button.pack(side='left', padx=(0, 5))
         self.update_status_box = tk.Label(update_cluster, text='CHECKING UPDATES…',
-                 bg=PANEL2, fg=MUTED, font=('Segoe UI Semibold', 7), padx=8, pady=4,
+                 bg=PANEL2, fg=MUTED, font=('Segoe UI Semibold', 7), padx=8, pady=5,
                  highlightthickness=1, highlightbackground='#263C82')
         self.update_status_box.pack(side='left')
+        tk.Label(update_cluster, text=DISPLAY_VERSION.upper(), bg=PANEL2, fg=CYAN,
+                 font=('Segoe UI Semibold', 8), padx=10, pady=5).pack(side='left', padx=(6, 0))
         self.update_button = RoundedButton(update_cluster, 'UPDATE', self.open_updater,
-                 BLUE, CYAN, height=25, radius=8, width=88)
+                 BLUE, CYAN, height=28, radius=9, width=88)
         self.update_button.pack(side='left', padx=(6, 0))
         self.update_button.pack_forget()
         tk.Frame(top, bg=self.themes[self.theme_name]['BORDER'], height=1).pack(fill='x', pady=(10, 0))
@@ -1927,6 +1930,15 @@ class YVZSplash(tk.Tk):
 
 def launch_app():
     """Start directly in YVZTools using the user's previously saved theme."""
+    # Give Windows a stable application identity so the taskbar uses the
+    # embedded YVZTools icon instead of the generic Python/PyInstaller icon.
+    if sys.platform == 'win32':
+        try:
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+                'YVZTools.NetMath.Space'
+            )
+        except (AttributeError, OSError):
+            pass
     splash = YVZSplash()
     splash.mainloop()
     app = App()
