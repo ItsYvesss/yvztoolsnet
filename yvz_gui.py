@@ -1331,7 +1331,7 @@ class App(tk.Tk):
 
     def launch_main_setup(self, url):
         """Launch the configured Main Chrome profile without leaving a console open."""
-        chrome = r'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+        chrome = r'C:\Program Files\Google\Chrome\Application\chrome.exe'
         if not os.path.isfile(chrome):
             chrome = core.find_chrome_exe()
         if not chrome or not os.path.isfile(chrome):
@@ -1341,7 +1341,7 @@ class App(tk.Tk):
             ))
             return False
 
-        debug_profile = r'C:\\ChromeDebugProfile'
+        debug_profile = r'C:\ChromeDebugProfile'
         os.makedirs(debug_profile, exist_ok=True)
         args = [
             chrome,
