@@ -8,6 +8,7 @@ import traceback
 import importlib.util
 import urllib.request
 import urllib.error
+import urllib.parse
 import re
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, colorchooser
@@ -896,28 +897,75 @@ class App(tk.Tk):
         return tuple((parts + [0, 0, 0])[:3]) if parts else (0, 0, 0)
 
     def check_update_status(self):
-        """Check GitHub Releases in the background, then repeat every 10 seconds."""
+        """Refresh the release status without hammering GitHub's rate-limited API."""
         if self._update_check_running:
             return
         self._update_check_running = True
 
+        def read_cached_release():
+            cache_path = INSTALL_DIR / 'release_cache.json'
+            try:
+                cached = json.loads(cache_path.read_text(encoding='utf-8'))
+                tag = str(cached.get('tag_name') or '').strip()
+                saved_at = int(cached.get('saved_at') or 0)
+                if tag and saved_at and time.time() - saved_at < 30 * 24 * 60 * 60:
+                    return tag
+            except (OSError, ValueError, TypeError, json.JSONDecodeError):
+                pass
+            return None
+
+        def write_cached_release(tag):
+            cache_path = INSTALL_DIR / 'release_cache.json'
+            try:
+                temp_path = cache_path.with_suffix('.tmp')
+                temp_path.write_text(json.dumps({'tag_name': tag, 'saved_at': int(time.time())}), encoding='utf-8')
+                os.replace(str(temp_path), str(cache_path))
+            except (OSError, TypeError):
+                pass
+
         def worker():
             try:
-                req = urllib.request.Request(
-                    'https://api.github.com/repos/ItsYvesss/yvztoolsnet/releases/latest',
-                    headers={'Accept': 'application/vnd.github+json',
-                             'User-Agent': 'YVZTools-Version-Check'}
-                )
-                with urllib.request.urlopen(req, timeout=10) as response:
-                    release = json.loads(response.read().decode('utf-8'))
-                latest = str(release.get('tag_name') or release.get('name') or '')
+                # Share the updater's cache and refresh it at most once every 15 minutes.
+                cached = read_cached_release()
+                cache_path = INSTALL_DIR / 'release_cache.json'
+                cache_is_fresh = False
+                try:
+                    cache_data = json.loads(cache_path.read_text(encoding='utf-8'))
+                    cache_is_fresh = bool(cached and time.time() - int(cache_data.get('saved_at') or 0) < 900)
+                except (OSError, ValueError, TypeError, json.JSONDecodeError):
+                    pass
+
+                latest = cached if cache_is_fresh else None
+                if not cache_is_fresh:
+                    req = urllib.request.Request(
+                        'https://github.com/ItsYvesss/yvztoolsnet/releases/latest',
+                        headers={'User-Agent': 'YVZTools-Version-Check/6.6', 'Accept': 'text/html'}
+                    )
+                    with urllib.request.urlopen(req, timeout=15) as response:
+                        final_url = response.geturl()
+                    match = re.search(r'/releases/tag/([^/]+)', final_url)
+                    if not match:
+                        raise ValueError('GitHub did not return a stable release tag.')
+                    latest = urllib.parse.unquote(match.group(1))
+                    if not re.fullmatch(r'v?\\d+(?:\\.\\d+){1,2}', latest):
+                        raise ValueError('GitHub returned an invalid release version.')
+                    if not latest.startswith('v'):
+                        latest = 'v' + latest
+                    write_cached_release(latest)
+
                 if not latest:
-                    raise ValueError('Latest release did not include a version tag.')
+                    raise RuntimeError('No saved release version is available yet.')
                 is_outdated = self._version_parts(latest) > self._version_parts(APP_VERSION)
                 self.after(0, lambda: self._show_update_status(latest, is_outdated))
-            except Exception:
+            except Exception as exc:
+                # A previously verified release tag is safer than showing UNKNOWN on a transient outage.
+                cached = read_cached_release()
                 try:
-                    self.after(0, self._show_update_check_failed)
+                    if cached:
+                        is_outdated = self._version_parts(cached) > self._version_parts(APP_VERSION)
+                        self.after(0, lambda: self._show_update_status(cached, is_outdated))
+                    else:
+                        self.after(0, lambda: self._show_update_check_failed(str(exc)))
                 except tk.TclError:
                     pass
 
@@ -949,10 +997,10 @@ class App(tk.Tk):
         finally:
             self._schedule_update_check()
 
-    def _show_update_check_failed(self):
+    def _show_update_check_failed(self, detail=''):
         try:
             self.update_status_box.configure(
-                text='UPDATE STATUS UNKNOWN', bg=PANEL2, fg=MUTED,
+                text='CONNECTION ISSUE • RETRYING', bg=PANEL2, fg=MUTED,
                 highlightbackground='#263C82'
             )
             self.update_button.pack_forget()
