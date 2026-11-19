@@ -24,7 +24,7 @@ APP_DIR = Path(sys.executable if getattr(sys, "frozen", False) else __file__).re
 APP_EXE = APP_DIR / APP_NAME
 VERSION_FILE = APP_DIR / "version.txt"
 RELEASE_CACHE_FILE = APP_DIR / "release_cache.json"
-UPDATER_VERSION = "6.5.0"
+UPDATER_VERSION = "6.6.0"
 USER_AGENT = f"YVZTOOLS-Updater/{UPDATER_VERSION}"
 # Use certifi’s bundled Mozilla CA roots so HTTPS certificate validation works
 # in the PyInstaller one-file build as well as a normal Python installation.
@@ -87,16 +87,40 @@ def read_release_cache():
         return None
 
 def request_latest_release():
+    """Resolve the latest stable release with bounded retries and rate-limit backoff."""
     url = 'https://github.com/' + GITHUB_REPO + '/releases/latest'
-    req = urllib.request.Request(url, headers={'User-Agent': USER_AGENT, 'Accept': 'text/html'})
-    with urllib.request.urlopen(req, timeout=20, context=SSL_CONTEXT) as response:
-        final_url = response.geturl()
-    match = re.search(r'/releases/tag/([^/]+)', urllib.parse.urlparse(final_url).path)
-    if not match:
-        raise ValueError('Could not identify the latest stable release from GitHub.')
-    metadata = release_metadata_from_tag(urllib.parse.unquote(match.group(1)))
-    save_release_cache(metadata)
-    return metadata
+    last_error = None
+    for attempt in range(3):
+        req = urllib.request.Request(
+            url,
+            headers={'User-Agent': USER_AGENT, 'Accept': 'text/html',
+                     'Cache-Control': 'no-cache'}
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=20, context=SSL_CONTEXT) as response:
+                final_url = response.geturl()
+            match = re.search(r'/releases/tag/([^/]+)', urllib.parse.urlparse(final_url).path)
+            if not match:
+                raise ValueError('Could not identify the latest stable release from GitHub.')
+            metadata = release_metadata_from_tag(urllib.parse.unquote(match.group(1)))
+            save_release_cache(metadata)
+            return metadata
+        except urllib.error.HTTPError as exc:
+            last_error = exc
+            if exc.code not in (403, 429, 500, 502, 503, 504) or attempt == 2:
+                raise
+            retry_after = exc.headers.get('Retry-After') if exc.headers else None
+            try:
+                delay = min(12, max(1, int(retry_after))) if retry_after else (2 ** attempt)
+            except (TypeError, ValueError):
+                delay = 2 ** attempt
+            time.sleep(delay)
+        except (urllib.error.URLError, TimeoutError) as exc:
+            last_error = exc
+            if attempt == 2:
+                raise
+            time.sleep(2 ** attempt)
+    raise last_error or RuntimeError('GitHub release check failed.')
 
 def app_is_running():
     if os.name != "nt":
