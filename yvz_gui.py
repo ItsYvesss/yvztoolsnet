@@ -237,6 +237,9 @@ class SpaceBackground(tk.Canvas):
         h = max(self._bh, 300)
 
         theme = getattr(self.master, 'theme_name', 'dark')
+        # Paint the complete canvas first so no unpainted edge can reveal Tk's
+        # default white widget background during a resize or theme switch.
+        self.create_rectangle(0, 0, w, h, fill=BG, outline='', tags='base-background')
         palettes = {
             'dark': ([('#040714',0.0),('#071129',.25),('#0B1433',.52),('#17103A',.78),('#06091C',1.0)], '#77A5FF','#254BA5','#6337A0'),
             'rainbow': ([('#10051F',0.0),('#190A2C',.25),('#101832',.52),('#25103A',.78),('#08091C',1.0)], '#FF83D8','#42E8FF','#B56BFF'),
@@ -325,7 +328,9 @@ class App(tk.Tk):
         self._fullscreen = False
         self.bind('<F11>', self._toggle_fullscreen)
         self.bind('<Escape>', lambda e: self._toggle_fullscreen(force=False) if self._fullscreen else None)
-        self.configure(bg=BG)
+        # Keep the root/client-area background explicitly on the active theme color.
+        # This prevents Windows/Tk from exposing a default-white strip around the placed canvas.
+        self.configure(bg=BG, highlightthickness=0, bd=0)
         # Use the actual YVZTools brand icon for both the title bar and Windows taskbar.
         try:
             self.iconbitmap(str(BASE / 'yvztools.ico'))
@@ -550,8 +555,9 @@ class App(tk.Tk):
         style.map('Soft.TButton', foreground=[('disabled', MUTED)], background=[('active', CYAN), ('disabled', PANEL2)])
 
     def _build_ui(self):
-        bg = SpaceBackground(self)
-        bg.place(relx=0, rely=0, relwidth=1, relheight=1)
+        bg = SpaceBackground(self, bg=BG, highlightthickness=0, bd=0, relief='flat')
+        self._space_background = bg
+        bg.place(x=0, y=0, relwidth=1, relheight=1)
 
         border = self.themes[self.theme_name]['BORDER']
 
@@ -569,12 +575,12 @@ class App(tk.Tk):
         # Every other theme uses the normal Eve/YVZTools brand mark.
         if self.theme_name == 'astroworld':
             try:
-                self._astroworld_header_source = tk.PhotoImage(
-                    file=str(BASE / 'assets' / 'astroworld_cover.png'))
-                scale_x = max(1, (self._astroworld_header_source.width() + 47) // 48)
-                scale_y = max(1, (self._astroworld_header_source.height() + 47) // 48)
-                self._astroworld_header_img = self._astroworld_header_source.subsample(scale_x, scale_y)
-                tk.Label(title_row, image=self._astroworld_header_img, bg=BG, bd=0).pack(side='left', padx=(0, 13))
+                self._astroworld_header_source = Image.open(
+                    BASE / 'assets' / 'astroworld_cover.png').convert('RGBA')
+                self._astroworld_header_img = ImageTk.PhotoImage(
+                    self._astroworld_header_source.resize((64, 64), Image.Resampling.LANCZOS))
+                tk.Label(title_row, image=self._astroworld_header_img, bg=BG, bd=0,
+                         highlightthickness=0).pack(side='left', padx=(0, 13))
             except (tk.TclError, OSError):
                 self._astroworld_header_source = None
                 self._astroworld_header_img = None
@@ -586,9 +592,13 @@ class App(tk.Tk):
         else:
             self._astroworld_header_img = None
             try:
-                self._brand_icon_source = tk.PhotoImage(file=str(BASE / 'yvztools_logo.png'))
-                self._brand_icon_img = self._brand_icon_source.subsample(4, 4)
-                tk.Label(title_row, image=self._brand_icon_img, bg=BG, bd=0).pack(side='left', padx=(0, 13))
+                # Render the header logo at a crisp 64x64 using Lanczos instead
+                # of Tk PhotoImage.subsample(), which can make the mark look soft.
+                self._brand_icon_source = Image.open(BASE / 'yvztools_logo.png').convert('RGBA')
+                self._brand_icon_img = ImageTk.PhotoImage(
+                    self._brand_icon_source.resize((64, 64), Image.Resampling.LANCZOS))
+                tk.Label(title_row, image=self._brand_icon_img, bg=BG, bd=0,
+                         highlightthickness=0).pack(side='left', padx=(0, 13))
             except (tk.TclError, OSError):
                 self._brand_icon_source = None
                 brand_mark = tk.Frame(title_row, bg=BLUE, width=42, height=42, highlightthickness=1, highlightbackground=CYAN)
