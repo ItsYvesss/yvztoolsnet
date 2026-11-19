@@ -60,6 +60,11 @@ class RoundedButton(tk.Canvas):
             fill, hover = '#F28C28', '#FFAD4D'
         elif theme_name == 'yvl':
             fill, hover, fg = '#FFFFFF', '#D8D8D8', '#050505'
+        elif theme_name == 'astroworld':
+            if fill == PURPLE:
+                fill, hover = '#D6A93B', '#F4C95D'
+            else:
+                fill, hover = '#2F8DFF', '#F4C95D'
         self.text = text
         self.command = command
         self.fill = fill
@@ -177,10 +182,15 @@ class SpaceBackground(tk.Canvas):
         self._yvl_background_source = None
         self._yvl_background_scaled = None
         self._yvl_background_scale = 0
+        self._astroworld_background_source = None
         try:
             self._yvl_background_source = tk.PhotoImage(file=str(BASE / 'assets' / 'yvl_theme_art.gif'))
         except (tk.TclError, OSError):
             self._yvl_background_source = None
+        try:
+            self._astroworld_background_source = tk.PhotoImage(file=str(BASE / 'assets' / 'astroworld_background.png'))
+        except (tk.TclError, OSError):
+            self._astroworld_background_source = None
         self._seed_stars()
         self._bw, self._bh = 900, 650
         self.bind('<Configure>', self._on_resize)
@@ -228,7 +238,8 @@ class SpaceBackground(tk.Canvas):
             'hacker': ([('#010302',0.0),('#031008',.3),('#04160A',.62),('#020905',1.0)], '#39FF88','#0B5E31','#168C48'),
             'red': ([('#070203',0.0),('#130407',.3),('#22070B',.62),('#090304',1.0)], '#FF526A','#741526','#9B263E'),
             'yvl': ([('#08060D',0.0),('#120F1B',.3),('#211A30',.62),('#09070F',1.0)], '#B69CFF','#594477','#9B7BFF'),
-            'oreo': ([('#F7F3EE',0.0),('#E7E0D8',.3),('#C9BFB4',.62),('#F7F3EE',1.0)], '#3B2923','#6B5145','#241B18')
+            'oreo': ([('#F7F3EE',0.0),('#E7E0D8',.3),('#C9BFB4',.62),('#F7F3EE',1.0)], '#3B2923','#6B5145','#241B18'),
+            'astroworld': ([('#050A18',0.0),('#08152D',.35),('#111B35',.72),('#070B18',1.0)], '#F4C95D','#2F8DFF','#D6A93B')
         }
         bands, star, arc1, arc2 = palettes.get(theme, palettes['dark'])
 
@@ -236,6 +247,16 @@ class SpaceBackground(tk.Canvas):
             y0 = int(h * bands[i][1])
             y1 = int(h * bands[i + 1][1])
             self.create_rectangle(0, y0, w, y1, fill=bands[i][0], outline='')
+
+        # ASTROWORLD cover art fills the background behind the app panels.
+        if theme == 'astroworld' and self._astroworld_background_source is not None:
+            try:
+                self.create_image(w / 2, h / 2, image=self._astroworld_background_source,
+                                  anchor='center', tags='astroworld-background')
+                self.create_rectangle(0, 0, w, h, fill='#030817',
+                                      stipple='gray50', outline='')
+            except (tk.TclError, OSError):
+                pass
 
         # YVL artwork becomes the full-window background, scaled to cover the canvas.
         import math
@@ -359,6 +380,11 @@ class App(tk.Tk):
                 'label':'🌈 FULL SPECTRUM', 'BG':'#10091B','PANEL':'#1A1028','PANEL2':'#261735',
                 'TEXT':'#FFFFFF','MUTED':'#D2C2E2','ACCENT':'#FF405F',
                 'PURPLE':'#9B59FF','CYAN':'#24C8FF','GREEN':'#FFD43B','BORDER':'#8B4DB5'
+            },
+            'astroworld': {
+                'label':'🌵 ASTROWORLD • BLUE & GOLD', 'BG':'#050A18','PANEL':'#0B1530','PANEL2':'#142344',
+                'TEXT':'#FFF8E7','MUTED':'#B8C5D9','ACCENT':'#2F8DFF',
+                'PURPLE':'#D6A93B','CYAN':'#F4C95D','GREEN':'#D6A93B','BORDER':'#B58A2D'
             }
         }
         self.answer_style = self._load_answer_style(self.theme_name)
@@ -546,7 +572,7 @@ class App(tk.Tk):
             self._yvl_theme_photo = None
             try:
                 self._brand_icon_source = tk.PhotoImage(file=str(BASE / 'yvztools_logo.png'))
-                self._brand_icon_img = self._brand_icon_source.subsample(5, 5)
+                self._brand_icon_img = self._brand_icon_source.subsample(4, 4)
                 tk.Label(title_row, image=self._brand_icon_img, bg=BG, bd=0).pack(side='left', padx=(0, 13))
             except (tk.TclError, OSError):
                 self._brand_icon_source = None
@@ -1759,6 +1785,7 @@ class YVZSplash(tk.Tk):
         'hacker': dict(top='#010302', bot='#04180B', star='#39FF88', ring1='#0B5E31', ring2='#168C48', accent='#19E66B', accent2='#59FF9A', text='#D7FFE4', sub='#59FF9A', muted='#6EA77D', track='#0A2414'),
         'red':    dict(top='#070203', bot='#25080D', star='#FF526A', ring1='#741526', ring2='#9B263E', accent='#F0445E', accent2='#FF7586', text='#FFF1F2', sub='#FF7586', muted='#B9868D', track='#2A0C12'),
         'oreo':   dict(top='#F7F3EE', bot='#D8CEC4', star='#3B2923', ring1='#6B5145', ring2='#9B8172', accent='#3B2923', accent2='#76665D', text='#241B18', sub='#4B352C', muted='#76665D', track='#C8B9AC'),
+        'astroworld': dict(top='#050A18', bot='#111B35', star='#F4C95D', ring1='#2F8DFF', ring2='#D6A93B', accent='#2F8DFF', accent2='#F4C95D', text='#FFF8E7', sub='#F4C95D', muted='#B8C5D9', track='#142344'),
     }
     STAGES = [
         (0.00, 'INITIALIZING CORE SYSTEMS'),
@@ -1787,6 +1814,17 @@ class YVZSplash(tk.Tk):
         self.canvas.pack(fill='both', expand=True)
 
         c, P = self.canvas, self.pal
+        # Show the ASTROWORLD cover in the startup splash when that theme is active.
+        self._astroworld_splash_image = None
+        if theme == 'astroworld':
+            try:
+                self._astroworld_splash_image = tk.PhotoImage(file=str(BASE / 'assets' / 'astroworld_background.png'))
+                c.create_image(self.W / 2, self.H / 2, image=self._astroworld_splash_image, anchor='center')
+                c.create_rectangle(0, 0, self.W, self.H, fill='#030817',
+                                   stipple='gray50', outline='')
+            except (tk.TclError, OSError):
+                self._astroworld_splash_image = None
+
         # Rich static background: gradient, soft planetary haze and fine grid accents.
         for i in range(0, self.H, 3):
             c.create_rectangle(0, i, self.W, i + 3, outline='',
