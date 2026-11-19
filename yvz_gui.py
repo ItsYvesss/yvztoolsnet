@@ -570,6 +570,55 @@ class App(tk.Tk):
         style.configure('Soft.TButton', font=('Segoe UI Semibold', 8), foreground=accent_text, background=BLUE, padding=(8, 6), borderwidth=0)
         style.map('Soft.TButton', foreground=[('disabled', MUTED)], background=[('active', CYAN), ('disabled', PANEL2)])
 
+    def _attach_theme_artwork(self, frame, focus_x=0.5, focus_y=0.5):
+        """Add a darkened, resize-aware artwork surface behind a major panel."""
+        if self.theme_name not in ('yvl', 'astroworld'):
+            return
+        background = getattr(self, '_space_background', None)
+        if background is None:
+            return
+        source = (background._astroworld_background_source
+                  if self.theme_name == 'astroworld'
+                  else background._yvl_background_source)
+        if source is None:
+            return
+
+        surface = tk.Label(frame, bd=0, highlightthickness=0, bg=PANEL)
+        surface.place(x=0, y=0, relwidth=1, relheight=1)
+        surface.lower()
+        cache = {'size': None, 'photo': None}
+        shade_color = '#080604' if self.theme_name == 'astroworld' else '#050505'
+
+        def redraw(_event=None):
+            try:
+                width = max(frame.winfo_width(), 1)
+                height = max(frame.winfo_height(), 1)
+                size = (width, height)
+                if cache['size'] == size:
+                    return
+                scale = max(width / source.width, height / source.height)
+                resized = source.resize(
+                    (max(width, int(source.width * scale + 0.5)),
+                     max(height, int(source.height * scale + 0.5))),
+                    Image.Resampling.LANCZOS)
+                left = int((resized.width - width) * focus_x)
+                top = int((resized.height - height) * focus_y)
+                cropped = resized.crop((left, top, left + width, top + height))
+                shade = Image.new('RGB', size, shade_color)
+                # Keep the artwork clearly recognizable while retaining enough
+                # contrast around the controls placed over the surface.
+                cropped = Image.blend(cropped, shade, 0.48)
+                photo = ImageTk.PhotoImage(cropped)
+                surface.configure(image=photo)
+                surface.image = photo
+                cache['photo'] = photo
+                cache['size'] = size
+            except (tk.TclError, OSError, ValueError):
+                pass
+
+        frame.bind('<Configure>', redraw, add='+')
+        frame.after_idle(redraw)
+
     def _build_ui(self):
         bg = SpaceBackground(self, bg=BG, highlightthickness=0, bd=0, relief='flat')
         self._space_background = bg
@@ -584,6 +633,7 @@ class App(tk.Tk):
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=1)
         top.grid(row=0, column=0, columnspan=2, sticky='ew', padx=26, pady=(18, 10))
+        self._attach_theme_artwork(top, 0.5, 0.18)
         self.header_frame = top
         title_row = tk.Frame(top, bg=BG)
         title_row.pack(fill='x')
@@ -652,10 +702,12 @@ class App(tk.Tk):
         # Main two-column layout
         left = tk.Frame(self, bg=PANEL, highlightbackground=border, highlightthickness=1)
         left.grid(row=1, column=0, sticky='nsew', padx=(26, 8), pady=(0, 20))
+        self._attach_theme_artwork(left, 0.22, 0.5)
         self.left_frame = left
         left.pack_propagate(False)
         right = tk.Frame(self, bg=PANEL, highlightbackground=border, highlightthickness=1)
         right.grid(row=1, column=1, sticky='nsew', padx=(8, 26), pady=(0, 20))
+        self._attach_theme_artwork(right, 0.72, 0.5)
         self.right_frame = right
 
         # Left: control deck
@@ -678,6 +730,7 @@ class App(tk.Tk):
         # Compact status card
         status = tk.Frame(left, bg=PANEL2, highlightbackground=border, highlightthickness=1)
         status.pack(fill='x', padx=14, pady=(17, 10))
+        self._attach_theme_artwork(status, 0.30, 0.45)
         tk.Label(status, text='LIVE SYSTEM STATUS', bg=PANEL2, fg=CYAN,
                  font=('Segoe UI Semibold', 8)).pack(anchor='w', padx=12, pady=(11, 7))
         self.status_debug = tk.Label(status, text='Chrome connection: checking…', bg=PANEL2, fg=MUTED,
@@ -735,6 +788,7 @@ class App(tk.Tk):
         # Question card
         qcard = tk.Frame(right, bg=PANEL2, highlightbackground=border, highlightthickness=1)
         qcard.pack(fill='x', padx=16, pady=(0, 11))
+        self._attach_theme_artwork(qcard, 0.62, 0.34)
         qhead = tk.Frame(qcard, bg=PANEL2)
         qhead.pack(fill='x', padx=12, pady=(8, 0))
         tk.Label(qhead, text='QUESTION', bg=PANEL2, fg=CYAN,
@@ -750,6 +804,7 @@ class App(tk.Tk):
         # Solution card
         solcard = tk.Frame(right, bg=PANEL2, highlightbackground=border, highlightthickness=1)
         solcard.pack(fill='both', expand=True, padx=16, pady=(0, 11))
+        self._attach_theme_artwork(solcard, 0.72, 0.58)
         solhead = tk.Frame(solcard, bg=PANEL2)
         solhead.pack(fill='x', padx=12, pady=(8, 0))
         tk.Label(solhead, text='AI SOLUTION', bg=PANEL2, fg=GREEN,
@@ -797,6 +852,7 @@ class App(tk.Tk):
         # Activity footer
         logcard = tk.Frame(right, bg=PANEL2, highlightbackground=border, highlightthickness=1)
         logcard.pack(fill='x', padx=16, pady=(0, 16))
+        self._attach_theme_artwork(logcard, 0.88, 0.82)
         tk.Label(logcard, text='RECENT ACTIVITY', bg=PANEL2, fg=GREEN,
                  font=('Segoe UI Semibold', 8)).pack(anchor='w', padx=12, pady=(8, 2))
         self.log = tk.Text(logcard, bg=PANEL2, fg=MUTED, relief='flat', wrap='word',
