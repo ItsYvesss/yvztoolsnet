@@ -61,10 +61,11 @@ class RoundedButton(tk.Canvas):
         elif theme_name == 'yvl':
             fill, hover, fg = '#FFFFFF', '#D8D8D8', '#050505'
         elif theme_name == 'astroworld':
+            # Strictly antique gold and champagne; no blue button states.
             if fill == PURPLE:
-                fill, hover = '#D6A93B', '#F4C95D'
+                fill, hover, fg = '#8A641B', '#D9AE4A', '#FFF8E7'
             else:
-                fill, hover = '#2F8DFF', '#F4C95D'
+                fill, hover, fg = '#C49A36', '#F2D27A', '#211606'
         self.text = text
         self.command = command
         self.fill = fill
@@ -239,7 +240,7 @@ class SpaceBackground(tk.Canvas):
             'red': ([('#070203',0.0),('#130407',.3),('#22070B',.62),('#090304',1.0)], '#FF526A','#741526','#9B263E'),
             'yvl': ([('#08060D',0.0),('#120F1B',.3),('#211A30',.62),('#09070F',1.0)], '#B69CFF','#594477','#9B7BFF'),
             'oreo': ([('#F7F3EE',0.0),('#E7E0D8',.3),('#C9BFB4',.62),('#F7F3EE',1.0)], '#3B2923','#6B5145','#241B18'),
-            'astroworld': ([('#050A18',0.0),('#08152D',.35),('#111B35',.72),('#070B18',1.0)], '#F4C95D','#2F8DFF','#D6A93B')
+            'astroworld': ([('#080603',0.0),('#171006',.35),('#241807',.72),('#090704',1.0)], '#E8C66A','#9A7024','#D5A943')
         }
         bands, star, arc1, arc2 = palettes.get(theme, palettes['dark'])
 
@@ -253,7 +254,7 @@ class SpaceBackground(tk.Canvas):
             try:
                 self.create_image(w / 2, h / 2, image=self._astroworld_background_source,
                                   anchor='center', tags='astroworld-background')
-                self.create_rectangle(0, 0, w, h, fill='#030817',
+                self.create_rectangle(0, 0, w, h, fill='#100B03',
                                       stipple='gray50', outline='')
             except (tk.TclError, OSError):
                 pass
@@ -299,7 +300,7 @@ class SpaceBackground(tk.Canvas):
             sx = (self.t * 4) % max(w, 1)
             sy = 100 + (self.t * 2) % max(int(h*.55), 1)
             self.create_line(sx, sy, sx+34, sy+9,
-                             fill={'dark':'#B9D7FF','pink':'#F1A8C5','purple':'#D7B8FF','chocolate':'#F0B27A','orange':'#FFD09A','hacker':'#6DFFAA','red':'#FF8797','rainbow':'#FF83D8'}.get(theme, '#B9D7FF'), width=2)
+                             fill={'dark':'#B9D7FF','pink':'#F1A8C5','purple':'#D7B8FF','chocolate':'#F0B27A','orange':'#FFD09A','hacker':'#6DFFAA','red':'#FF8797','rainbow':'#FF83D8','astroworld':'#E8C66A'}.get(theme, '#B9D7FF'), width=2)
 
 class App(tk.Tk):
     def __init__(self):
@@ -382,9 +383,9 @@ class App(tk.Tk):
                 'PURPLE':'#9B59FF','CYAN':'#24C8FF','GREEN':'#FFD43B','BORDER':'#8B4DB5'
             },
             'astroworld': {
-                'label':'🌵 ASTROWORLD • BLUE & GOLD', 'BG':'#050A18','PANEL':'#0B1530','PANEL2':'#142344',
-                'TEXT':'#FFF8E7','MUTED':'#B8C5D9','ACCENT':'#2F8DFF',
-                'PURPLE':'#D6A93B','CYAN':'#F4C95D','GREEN':'#D6A93B','BORDER':'#B58A2D'
+                'label':'🌵 ASTROWORLD • GOLDEN HOUR', 'BG':'#090704','PANEL':'#171006','PANEL2':'#261B0B',
+                'TEXT':'#FFF4D6','MUTED':'#C7B58A','ACCENT':'#C49A36',
+                'PURPLE':'#8A641B','CYAN':'#F2D27A','GREEN':'#D9AE4A','BORDER':'#8B6828'
             }
         }
         self.answer_style = self._load_answer_style(self.theme_name)
@@ -551,25 +552,26 @@ class App(tk.Tk):
         self.header_frame = top
         title_row = tk.Frame(top, bg=BG)
         title_row.pack(fill='x')
-        if self.theme_name == 'yvl':
+        # ASTROWORLD cover is only the main-header mark in ASTROWORLD theme.
+        # Every other theme uses the normal Eve/YVZTools brand mark.
+        if self.theme_name == 'astroworld':
             try:
-                self._yvl_theme_source = tk.PhotoImage(file=str(BASE / 'assets' / 'yvl_theme_art.gif'))
-                scale_x = max(1, (self._yvl_theme_source.width() + 47) // 48)
-                scale_y = max(1, (self._yvl_theme_source.height() + 47) // 48)
-                self._yvl_theme_photo = self._yvl_theme_source.subsample(scale_x, scale_y)
-                yvl_icon = tk.Frame(title_row, bg='#080808', width=50, height=50,
-                                    highlightthickness=1, highlightbackground='#777777')
-                yvl_icon.pack(side='left', padx=(0, 11))
-                yvl_icon.pack_propagate(False)
-                tk.Label(yvl_icon, image=self._yvl_theme_photo, bg='#080808', bd=0).pack(expand=True)
-            except Exception:
-                self._yvl_theme_source = None
-                self._yvl_theme_photo = None
-                brand_mark = tk.Frame(title_row, bg='#D8D8D8', width=50, height=50, highlightthickness=1, highlightbackground='#777777')
-                brand_mark.pack(side='left', padx=(0, 11)); brand_mark.pack_propagate(False)
-                tk.Label(brand_mark, text='♛', bg='#D8D8D8', fg='#111111', font=('Segoe UI Symbol', 22)).pack(expand=True)
+                self._astroworld_header_source = tk.PhotoImage(
+                    file=str(BASE / 'assets' / 'astroworld_cover.png'))
+                scale_x = max(1, (self._astroworld_header_source.width() + 47) // 48)
+                scale_y = max(1, (self._astroworld_header_source.height() + 47) // 48)
+                self._astroworld_header_img = self._astroworld_header_source.subsample(scale_x, scale_y)
+                tk.Label(title_row, image=self._astroworld_header_img, bg=BG, bd=0).pack(side='left', padx=(0, 13))
+            except (tk.TclError, OSError):
+                self._astroworld_header_source = None
+                self._astroworld_header_img = None
+                brand_mark = tk.Frame(title_row, bg=PURPLE, width=48, height=48,
+                                      highlightthickness=1, highlightbackground=CYAN)
+                brand_mark.pack(side='left', padx=(0, 13)); brand_mark.pack_propagate(False)
+                tk.Label(brand_mark, text='A', bg=PURPLE, fg=TEXT,
+                         font=('Segoe UI Black', 22)).pack(expand=True)
         else:
-            self._yvl_theme_photo = None
+            self._astroworld_header_img = None
             try:
                 self._brand_icon_source = tk.PhotoImage(file=str(BASE / 'yvztools_logo.png'))
                 self._brand_icon_img = self._brand_icon_source.subsample(4, 4)
