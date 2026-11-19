@@ -307,7 +307,6 @@ class App(tk.Tk):
         self.busy = False
         self._status_check_running = False
         self._update_check_running = False
-        self.answer_style = self._load_answer_style()
         self.theme_name = core.load_config().get('theme', 'dark')
         self.themes = {
             'dark': {
