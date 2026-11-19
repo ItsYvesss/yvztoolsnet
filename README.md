@@ -29,7 +29,7 @@ YVZTOOLS/
 
 ## Features
 
-- 🌌 YVZTools NetMath Space dashboard (v6.7)
+- 🌌 YVZTools NetMath Space dashboard (v6.8)
 - 🪟 Responsive window resizing with adaptive header spacing to prevent UI overlap
 - 🔄 Update status refreshes every 10 seconds, uses a shared 15-minute release cache, avoids GitHub API rate limits, and falls back to the last known release during temporary outages
 - 🚀 Cinematic v5.8 startup sequence with layered space glow, orbiting reactor, drifting particles, and eased progress animation
@@ -39,8 +39,12 @@ YVZTOOLS/
 - 🌐 START CHROME (R) opens a two-step launcher: choose Main or Separate Chrome profile, then choose Netmath or Net français; each option opens its matching Scolab collections page
 - 🧠 Smart question solving
 - 🌐 Chrome/DevTools integration
-- 🎨 v6.5: Chocolate theme uses cocoa, caramel, and cream tones with no purple accents; restored the official YVZTools logo in the app header, title bar, and taskbar
+- 🎨 v6.8: Chocolate theme uses cocoa, caramel, and cream tones with no purple accents; restored the official YVZTools logo in the app header, title bar, and taskbar
 - 🌓 Copy Answer uses theme-aware high-contrast colors for readability
+- 🌈 Spectrum buttons use a full rainbow gradient across the button face (no underline stripe)
+- 🔵 Space Blue uses blue buttons throughout; Crimson and Solar Orange use matching red buttons
+- ♛ YVL theme art is framed as a square header icon and used as its full-window background
+- 🖼️ Your supplied YVZ logo is used for the app icon, title bar, taskbar, and header toolbar
 - 🎨 Multiple themes and answer-style customization
 - ⌨️ Keyboard shortcuts for fast workflows
 - 🔄 Built-in updater with cached release checks, retry/backoff for rate limits, and automatic verified downloads
