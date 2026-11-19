@@ -619,7 +619,9 @@ class App(tk.Tk):
         brand_text = tk.Frame(title_row, bg=BG)
         brand_text.pack(side='left', pady=(1, 0))
         tk.Label(brand_text, text='YVZTOOLS', bg=BG, fg=TEXT, font=('Segoe UI Black', 22)).pack(anchor='w')
-        tagline = '♛ KEN CARSON • BLACK LABEL' if self.theme_name == 'yvl' else 'NETMATH SPACE  /  DESKTOP CONTROL CENTER'
+        tagline = ('♛ KEN CARSON • BLACK LABEL' if self.theme_name == 'yvl' else
+                   'TRAVIS SCOTT • ASTROWORLD' if self.theme_name == 'astroworld' else
+                   'NETMATH SPACE  /  DESKTOP CONTROL CENTER')
         tk.Label(brand_text, text=tagline, bg=BG, fg=BLUE, font=('Segoe UI Semibold', 8)).pack(anchor='w', pady=(0, 1))
         # Version and update status stay in the existing header.
         update_cluster = tk.Frame(top, bg=BG)
