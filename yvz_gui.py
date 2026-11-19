@@ -161,9 +161,13 @@ class RoundedButton(tk.Canvas):
                 segment = min(int(position), len(spectrum) - 2)
                 color = _lerp_hex(spectrum[segment], spectrum[segment + 1], position - segment)
                 self.create_rectangle(x0, y0, x1, y1, fill=color, outline='')
+        # Use the Windows emoji font at a larger size for icon-only controls.
+        # This keeps the refresh symbol fully visible inside its square button.
+        icon_only = self.text in ('🔄', '⟳', '↻', '⟳️')
+        button_font = ('Segoe UI Emoji', 18) if icon_only else ('Segoe UI Semibold', 9)
         self.create_text(w/2, h/2+yoff, text=self.text,
                          fill=self.fg if self.enabled else MUTED,
-                         font=('Segoe UI Semibold', 9))
+                         font=button_font, anchor='center')
 
     def state(self, states=None):
         if states:
@@ -238,8 +242,8 @@ class SpaceBackground(tk.Canvas):
 
     def draw(self):
         self.delete('all')
-        w = max(self._bw, 300)
-        h = max(self._bh, 300)
+        w = max(self.winfo_width(), self._bw, 1)
+        h = max(self.winfo_height(), self._bh, 1)
 
         theme = getattr(self.master, 'theme_name', 'dark')
         # Paint the complete canvas first so no unpainted edge can reveal Tk's
@@ -284,8 +288,8 @@ class SpaceBackground(tk.Canvas):
                     cropped = cropped.filter(ImageFilter.UnsharpMask(radius=1.1, percent=110, threshold=3))
                     self._astroworld_background_scaled = ImageTk.PhotoImage(cropped)
                     self._astroworld_background_size = target_size
-                self.create_image(w / 2, h / 2, image=self._astroworld_background_scaled,
-                                  anchor='center', tags='astroworld-background')
+                self.create_image(0, 0, image=self._astroworld_background_scaled,
+                                  anchor='nw', tags='astroworld-background')
             except (tk.TclError, OSError, ValueError):
                 self._astroworld_background_scaled = None
                 self._astroworld_background_size = None
@@ -307,8 +311,8 @@ class SpaceBackground(tk.Canvas):
                     cropped = cropped.filter(ImageFilter.UnsharpMask(radius=1.2, percent=115, threshold=3))
                     self._yvl_background_scaled = ImageTk.PhotoImage(cropped)
                     self._yvl_background_size = target_size
-                self.create_image(w / 2, h / 2, image=self._yvl_background_scaled,
-                                  anchor='center', tags='ken-carson-background')
+                self.create_image(0, 0, image=self._yvl_background_scaled,
+                                  anchor='nw', tags='ken-carson-background')
             except (tk.TclError, OSError, ValueError):
                 self._yvl_background_scaled = None
                 self._yvl_background_size = None
