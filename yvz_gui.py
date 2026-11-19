@@ -15,6 +15,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, colorchooser
 from pathlib import Path
 import tkinter.font as tkfont
+from PIL import Image, ImageTk, ImageFilter
 
 APP_NAME = 'YVZTOOLS — NetMath Space'
 from version import APP_VERSION, DISPLAY_VERSION
@@ -182,12 +183,19 @@ class SpaceBackground(tk.Canvas):
         self.running = True
         self._yvl_background_source = None
         self._yvl_background_scaled = None
-        self._yvl_background_scale = 0
+        self._yvl_background_size = None
         self._astroworld_background_source = None
         try:
-            self._yvl_background_source = tk.PhotoImage(file=str(BASE / 'assets' / 'yvl_theme_art.gif'))
-        except (tk.TclError, OSError):
-            self._yvl_background_source = None
+            # Use a pre-upscaled, high-quality PNG rather than Tk's nearest-neighbor
+            # zoom of the tiny original GIF. This keeps the Ken Carson wallpaper smooth.
+            self._yvl_background_source = Image.open(
+                BASE / 'assets' / 'ken_carson_background.png').convert('RGB')
+        except (OSError, ValueError):
+            try:
+                self._yvl_background_source = Image.open(
+                    BASE / 'assets' / 'yvl_theme_art.gif').convert('RGB')
+            except (OSError, ValueError):
+                self._yvl_background_source = None
         try:
             self._astroworld_background_source = tk.PhotoImage(file=str(BASE / 'assets' / 'astroworld_background.png'))
         except (tk.TclError, OSError):
@@ -259,23 +267,28 @@ class SpaceBackground(tk.Canvas):
             except (tk.TclError, OSError):
                 pass
 
-        # YVL artwork becomes the full-window background, scaled to cover the canvas.
-        import math
+        # KEN CARSON artwork uses high-quality Lanczos resizing and a centered
+        # cover crop. Cache by window size so resizing stays smooth and efficient.
         if theme == 'yvl' and self._yvl_background_source is not None:
             try:
-                source = self._yvl_background_source
-                scale = max(1, math.ceil(max(w / source.width(), h / source.height())))
-                if scale > 1:
-                    if self._yvl_background_scaled is None or self._yvl_background_scale != scale:
-                        self._yvl_background_scaled = source.zoom(scale, scale)
-                        self._yvl_background_scale = scale
-                    background_image = self._yvl_background_scaled
-                else:
-                    background_image = source
-                self.create_image(w / 2, h / 2, image=background_image,
-                                  anchor='center', tags='yvl-background')
-            except (tk.TclError, OSError):
+                target_size = (max(1, int(w)), max(1, int(h)))
+                if self._yvl_background_scaled is None or self._yvl_background_size != target_size:
+                    source = self._yvl_background_source
+                    scale = max(target_size[0] / source.width, target_size[1] / source.height)
+                    resized_size = (max(target_size[0], int(source.width * scale + 0.5)),
+                                    max(target_size[1], int(source.height * scale + 0.5)))
+                    resized = source.resize(resized_size, Image.Resampling.LANCZOS)
+                    left = (resized.width - target_size[0]) // 2
+                    top = (resized.height - target_size[1]) // 2
+                    cropped = resized.crop((left, top, left + target_size[0], top + target_size[1]))
+                    cropped = cropped.filter(ImageFilter.UnsharpMask(radius=1.2, percent=115, threshold=3))
+                    self._yvl_background_scaled = ImageTk.PhotoImage(cropped)
+                    self._yvl_background_size = target_size
+                self.create_image(w / 2, h / 2, image=self._yvl_background_scaled,
+                                  anchor='center', tags='ken-carson-background')
+            except (tk.TclError, OSError, ValueError):
                 self._yvl_background_scaled = None
+                self._yvl_background_size = None
 
         # Slow parallax stars. The phase creates a subtle twinkle.
         for s in self.stars:
@@ -368,7 +381,7 @@ class App(tk.Tk):
                 'PURPLE':'#F28C28','CYAN':'#FFAD4D','GREEN':'#72E0A8','BORDER':'#8C4814'
             },
             'yvl': {
-                'label':'♛ YVL • BLACK & WHITE', 'BG':'#050505','PANEL':'#101010','PANEL2':'#1B1B1B',
+                'label':'♛ KEN CARSON • BLACK & WHITE', 'BG':'#050505','PANEL':'#101010','PANEL2':'#1B1B1B',
                 'TEXT':'#FFFFFF','MUTED':'#A6A6A6','ACCENT':'#FFFFFF',
                 'PURPLE':'#D8D8D8','CYAN':'#F2F2F2','GREEN':'#D0D0D0','BORDER':'#555555'
             },
@@ -584,7 +597,7 @@ class App(tk.Tk):
         brand_text = tk.Frame(title_row, bg=BG)
         brand_text.pack(side='left', pady=(1, 0))
         tk.Label(brand_text, text='YVZTOOLS', bg=BG, fg=TEXT, font=('Segoe UI Black', 22)).pack(anchor='w')
-        tagline = '♛ KING CARSON • YVL BLACK LABEL' if self.theme_name == 'yvl' else 'NETMATH SPACE  /  DESKTOP CONTROL CENTER'
+        tagline = '♛ KEN CARSON • BLACK LABEL' if self.theme_name == 'yvl' else 'NETMATH SPACE  /  DESKTOP CONTROL CENTER'
         tk.Label(brand_text, text=tagline, bg=BG, fg=BLUE, font=('Segoe UI Semibold', 8)).pack(anchor='w', pady=(0, 1))
         # Version and update status stay in the existing header.
         update_cluster = tk.Frame(title_row, bg=BG)
