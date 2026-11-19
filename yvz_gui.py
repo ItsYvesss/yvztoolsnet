@@ -508,6 +508,11 @@ class App(tk.Tk):
                  bg=PANEL2, fg=MUTED, font=('Segoe UI Semibold', 7), padx=8, pady=4,
                  highlightthickness=1, highlightbackground='#263C82')
         self.update_status_box.pack(side='left')
+        self.refresh_update_button = RoundedButton(
+            update_cluster, '↻', lambda: self.check_update_status(force=True),
+            PANEL2, CYAN, height=25, radius=8, width=30
+        )
+        self.refresh_update_button.pack(side='left', padx=(4, 0))
         self.update_button = RoundedButton(update_cluster, 'UPDATE', self.open_updater,
                  BLUE, CYAN, height=25, radius=8, width=88)
         self.update_button.pack(side='left', padx=(6, 0))
@@ -896,11 +901,20 @@ class App(tk.Tk):
         parts = [int(v) for v in re.findall(r'\d+', str(value or ''))]
         return tuple((parts + [0, 0, 0])[:3]) if parts else (0, 0, 0)
 
-    def check_update_status(self):
-        """Refresh the release status without hammering GitHub's rate-limited API."""
+    def check_update_status(self, force=False):
+        """Check the latest release; manual refresh bypasses the 15-minute cache."""
         if self._update_check_running:
             return
         self._update_check_running = True
+        try:
+            self.refresh_update_button.configure(state='disabled', text='…')
+            if force:
+                self.update_status_box.configure(
+                    text='CHECKING FOR UPDATES…', bg=PANEL2, fg=MUTED,
+                    highlightbackground='#263C82'
+                )
+        except tk.TclError:
+            pass
 
         def read_cached_release():
             cache_path = INSTALL_DIR / 'release_cache.json'
@@ -925,7 +939,8 @@ class App(tk.Tk):
 
         def worker():
             try:
-                # Share the updater's cache and refresh it at most once every 15 minutes.
+                # Automatic checks use the shared 15-minute cache. A manual
+                # refresh always contacts GitHub, even when that cache is fresh.
                 cached = read_cached_release()
                 cache_path = INSTALL_DIR / 'release_cache.json'
                 cache_is_fresh = False
@@ -935,11 +950,11 @@ class App(tk.Tk):
                 except (OSError, ValueError, TypeError, json.JSONDecodeError):
                     pass
 
-                latest = cached if cache_is_fresh else None
-                if not cache_is_fresh:
+                latest = cached if cache_is_fresh and not force else None
+                if not latest:
                     req = urllib.request.Request(
                         'https://github.com/ItsYvesss/yvztoolsnet/releases/latest',
-                        headers={'User-Agent': 'YVZTools-Version-Check/6.6', 'Accept': 'text/html'}
+                        headers={'User-Agent': 'YVZTools-Version-Check/6.7', 'Accept': 'text/html'}
                     )
                     with urllib.request.urlopen(req, timeout=15) as response:
                         final_url = response.geturl()
@@ -953,15 +968,14 @@ class App(tk.Tk):
                         latest = 'v' + latest
                     write_cached_release(latest)
 
-                if not latest:
-                    raise RuntimeError('No saved release version is available yet.')
                 is_outdated = self._version_parts(latest) > self._version_parts(APP_VERSION)
                 self.after(0, lambda: self._show_update_status(latest, is_outdated))
             except Exception as exc:
-                # A previously verified release tag is safer than showing UNKNOWN on a transient outage.
+                # On a manual refresh, report the connection problem honestly
+                # instead of presenting an old cached result as a fresh check.
                 cached = read_cached_release()
                 try:
-                    if cached:
+                    if cached and not force:
                         is_outdated = self._version_parts(cached) > self._version_parts(APP_VERSION)
                         self.after(0, lambda: self._show_update_status(cached, is_outdated))
                     else:
@@ -974,6 +988,7 @@ class App(tk.Tk):
     def _schedule_update_check(self):
         self._update_check_running = False
         try:
+            self.refresh_update_button.configure(state='normal', text='↻')
             self.after(10000, self.check_update_status)
         except tk.TclError:
             pass
