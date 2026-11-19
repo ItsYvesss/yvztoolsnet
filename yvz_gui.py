@@ -46,6 +46,15 @@ class RoundedButton(tk.Canvas):
     def __init__(self, master, text, command, fill, hover, fg='white', height=38, radius=16, **kwargs):
         super().__init__(master, height=height, highlightthickness=0, bd=0,
                          bg=master.cget('bg'), cursor='hand2', **kwargs)
+        # Keep every primary action button on one consistent theme accent.
+        try:
+            theme_name = master.winfo_toplevel().theme_name
+        except Exception:
+            theme_name = ''
+        if theme_name == 'dark':
+            fill, hover = '#318BFA', '#58A8FF'
+        elif theme_name in ('red', 'orange'):
+            fill, hover = '#D92742', '#F0445E'
         self.text = text
         self.command = command
         self.fill = fill
@@ -238,7 +247,6 @@ class SpaceBackground(tk.Canvas):
                     background_image = source
                 self.create_image(w / 2, h / 2, image=background_image,
                                   anchor='center', tags='yvl-background')
-                self.tag_lower('yvl-background')
             except (tk.TclError, OSError):
                 self._yvl_background_scaled = None
 
