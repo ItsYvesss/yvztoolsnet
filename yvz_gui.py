@@ -962,7 +962,7 @@ class App(tk.Tk):
                     if not match:
                         raise ValueError('GitHub did not return a stable release tag.')
                     latest = urllib.parse.unquote(match.group(1))
-                    if not re.fullmatch(r'v?\\d+(?:\\.\\d+){1,2}', latest):
+                    if not re.fullmatch(r'v?\d+(?:\.\d+){1,2}', latest):
                         raise ValueError('GitHub returned an invalid release version.')
                     if not latest.startswith('v'):
                         latest = 'v' + latest
