@@ -29,9 +29,9 @@ YVZTOOLS/
 
 ## Features
 
-- 🌌 YVZTools NetMath Space dashboard (v6.5)
+- 🌌 YVZTools NetMath Space dashboard (v6.6)
 - 🪟 Responsive window resizing with adaptive header spacing to prevent UI overlap
-- 🔄 Update status checks GitHub every 10 seconds and shows UP TO DATE or UPDATE AVAILABLE
+- 🔄 Update status refreshes every 10 seconds, uses a shared 15-minute release cache, avoids GitHub API rate limits, and falls back to the last known release during temporary outages
 - 🚀 Cinematic v5.8 startup sequence with layered space glow, orbiting reactor, drifting particles, and eased progress animation
 - ✨ Smoother space background, button hover, and AI progress animations
 - 🔧 Fixed updater launch path for packaged Windows builds
@@ -43,7 +43,7 @@ YVZTOOLS/
 - 🌓 Copy Answer uses theme-aware high-contrast colors for readability
 - 🎨 Multiple themes and answer-style customization
 - ⌨️ Keyboard shortcuts for fast workflows
-- 🔄 Built-in updater with automatic version checks
+- 🔄 Built-in updater with cached release checks, retry/backoff for rate limits, and automatic verified downloads
 
 ## Build from source
 
