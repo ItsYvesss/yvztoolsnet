@@ -9,7 +9,9 @@ import sys
 import ssl
 import certifi
 import threading
+import time
 import urllib.error
+import urllib.parse
 import urllib.request
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -21,6 +23,7 @@ APP_NAME = "YVZNETMATH.exe"
 APP_DIR = Path(sys.executable if getattr(sys, "frozen", False) else __file__).resolve().parent
 APP_EXE = APP_DIR / APP_NAME
 VERSION_FILE = APP_DIR / "version.txt"
+RELEASE_CACHE_FILE = APP_DIR / "release_cache.json"
 UPDATER_VERSION = "6.5.0"
 USER_AGENT = f"YVZTOOLS-Updater/{UPDATER_VERSION}"
 # Use certifi’s bundled Mozilla CA roots so HTTPS certificate validation works
@@ -57,17 +60,43 @@ def read_local_version():
         return "0.0.0"
 
 
-def request_json(url):
-    req = urllib.request.Request(
-        url,
-        headers={"User-Agent": USER_AGENT, "Accept": "application/vnd.github+json"},
-    )
-    with urllib.request.urlopen(req, timeout=20, context=SSL_CONTEXT) as response:
-        data = json.load(response)
-    if not isinstance(data, dict):
-        raise ValueError("GitHub returned invalid release metadata.")
-    return data
+def release_metadata_from_tag(tag):
+    tag = str(tag or '').strip()
+    if not re.fullmatch(r'v?\d+(?:\.\d+){1,2}', tag):
+        raise ValueError('GitHub returned an invalid stable release tag.')
+    if not tag.startswith('v'):
+        tag = 'v' + tag
+    asset_url = 'https://github.com/' + GITHUB_REPO + '/releases/download/' + urllib.parse.quote(tag, safe='') + '/' + urllib.parse.quote(APP_NAME)
+    return {'tag_name': tag, 'asset': {'name': APP_NAME, 'browser_download_url': asset_url, 'digest': ''}}
 
+def save_release_cache(metadata):
+    try:
+        temp = RELEASE_CACHE_FILE.with_suffix('.tmp')
+        temp.write_text(json.dumps({'tag_name': metadata['tag_name'], 'saved_at': int(time.time())}), encoding='utf-8')
+        os.replace(str(temp), str(RELEASE_CACHE_FILE))
+    except (OSError, KeyError, TypeError):
+        pass
+
+def read_release_cache():
+    try:
+        cached = json.loads(RELEASE_CACHE_FILE.read_text(encoding='utf-8'))
+        if time.time() - int(cached.get('saved_at', 0)) > 2592000:
+            return None
+        return release_metadata_from_tag(cached.get('tag_name'))
+    except (OSError, ValueError, TypeError, json.JSONDecodeError):
+        return None
+
+def request_latest_release():
+    url = 'https://github.com/' + GITHUB_REPO + '/releases/latest'
+    req = urllib.request.Request(url, headers={'User-Agent': USER_AGENT, 'Accept': 'text/html'})
+    with urllib.request.urlopen(req, timeout=20, context=SSL_CONTEXT) as response:
+        final_url = response.geturl()
+    match = re.search(r'/releases/tag/([^/]+)', urllib.parse.urlparse(final_url).path)
+    if not match:
+        raise ValueError('Could not identify the latest stable release from GitHub.')
+    metadata = release_metadata_from_tag(urllib.parse.unquote(match.group(1)))
+    save_release_cache(metadata)
+    return metadata
 
 def app_is_running():
     if os.name != "nt":
@@ -251,19 +280,15 @@ class Updater(tk.Tk):
 
     def check_worker(self):
         try:
-            rel = request_json(RELEASE_API)
-            tag = rel.get("tag_name")
-            if not isinstance(tag, str) or not re.fullmatch(r"v?\d+(?:\.\d+){1,2}", tag.strip()):
-                raise ValueError("The latest release has missing or invalid version metadata.")
-            if rel.get("draft") or rel.get("prerelease"):
-                raise ValueError("GitHub did not return a stable release. Please retry shortly.")
-            asset = next((item for item in rel.get("assets", []) if item.get("name") == APP_NAME), None)
-            if not asset or not asset.get("browser_download_url"):
-                raise ValueError(f"The stable release {tag} is missing {APP_NAME}.")
-            self.events.put(("check_ok", read_local_version(), tag.strip(), asset))
+            metadata = request_latest_release()
+            self.events.put(('check_ok', read_local_version(), metadata['tag_name'], metadata['asset'], ''))
         except Exception as exc:
-            self.events.put(("error", "Update check failed", self.describe_error(exc)))
-
+            cached = read_release_cache()
+            if cached:
+                note = 'GitHub could not be reached, so the updater is using its last saved release information. Retry later to check for a newer release.'
+                self.events.put(('check_ok', read_local_version(), cached['tag_name'], cached['asset'], note))
+            else:
+                self.events.put(('error', 'Update check failed', self.describe_error(exc)))
     @staticmethod
     def describe_error(exc):
         if isinstance(exc, urllib.error.URLError):
@@ -353,7 +378,7 @@ class Updater(tk.Tk):
                     else:
                         self.progress_label.configure(text=f"Downloaded {done / 1048576:.1f} MB")
                 elif kind == "check_ok":
-                    _, current, latest, asset = event
+                    _, current, latest, asset, cache_note = event
                     self.progress.stop()
                     self.progress.configure(mode="determinate", value=0)
                     self.current_version = current
@@ -363,13 +388,15 @@ class Updater(tk.Tk):
                     self.latest_var.set(f"Latest version: {display_version(latest)}")
                     self.set_busy(False)
                     self.retry_btn.configure(state="normal")
+                    if cache_note:
+                        self.detail_var.set(cache_note)
                     if normalized_version(current) >= normalized_version(latest):
                         self.status_var.set("You're up to date!")
-                        self.detail_var.set(f"YVZTOOLS {display_version(current)} is already the latest stable release. This window will stay open until you close it.")
+                        self.detail_var.set(cache_note or f"YVZTOOLS {display_version(current)} is already the latest stable release. This window will stay open until you close it.")
                         self.update_btn.configure(state="disabled")
                     else:
                         self.status_var.set(f"Update available: {display_version(latest)}")
-                        self.detail_var.set(f"Your installed version is {display_version(current)}. Select Update Now to download and install the official release.")
+                        self.detail_var.set(cache_note or f"Your installed version is {display_version(current)}. Select Update Now to download and install the official release.")
                         self.update_btn.configure(state="normal")
                     self.progress_label.configure(text="")
                 elif kind == "installed":
