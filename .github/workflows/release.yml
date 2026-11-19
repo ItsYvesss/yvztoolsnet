@@ -47,8 +47,6 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python generate_brand_assets.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          python generate_brand_assets.py
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Build YVZNETMATH.exe
         shell: pwsh
