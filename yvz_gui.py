@@ -160,6 +160,12 @@ class SpaceBackground(tk.Canvas):
         self.stars = []
         self.t = 0
         self.running = True
+        self._yvl_background_source = None
+        self._yvl_background_scaled = None
+        try:
+            self._yvl_background_source = tk.PhotoImage(file=str(BASE / 'assets' / 'yvl_theme_art.gif'))
+        except (tk.TclError, OSError):
+            self._yvl_background_source = None
         self._seed_stars()
         self._bw, self._bh = 900, 650
         self.bind('<Configure>', self._on_resize)
@@ -216,8 +222,24 @@ class SpaceBackground(tk.Canvas):
             y1 = int(h * bands[i + 1][1])
             self.create_rectangle(0, y0, w, y1, fill=bands[i][0], outline='')
 
-        # Slow parallax stars. The phase creates a subtle twinkle.
+        # YVL artwork becomes the full-window background, scaled to cover the canvas.
         import math
+        if theme == 'yvl' and self._yvl_background_source is not None:
+            try:
+                source = self._yvl_background_source
+                scale = max(1, math.ceil(max(w / source.width(), h / source.height())))
+                if scale > 1:
+                    self._yvl_background_scaled = source.zoom(scale, scale)
+                    background_image = self._yvl_background_scaled
+                else:
+                    background_image = source
+                self.create_image(w / 2, h / 2, image=background_image,
+                                  anchor='center', tags='yvl-background')
+                self.tag_lower('yvl-background')
+            except (tk.TclError, OSError):
+                self._yvl_background_scaled = None
+
+        # Slow parallax stars. The phase creates a subtle twinkle.
         for s in self.stars:
             x, y, r, speed, phase = s
             xx = (x - self.t * speed * 1.2) % (w + 20) - 10
