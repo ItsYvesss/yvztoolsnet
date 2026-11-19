@@ -623,15 +623,15 @@ class App(tk.Tk):
                    'TRAVIS SCOTT • ASTROWORLD' if self.theme_name == 'astroworld' else
                    'NETMATH SPACE  /  DESKTOP CONTROL CENTER')
         tk.Label(brand_text, text=tagline, bg=BG, fg=BLUE, font=('Segoe UI Semibold', 8)).pack(anchor='w', pady=(0, 1))
-        # Version and update status stay in the existing header.
-        update_cluster = tk.Frame(top, bg=BG)
+        # Keep update controls on the SAME title row as the app branding.
+        # This prevents the refresh button from dropping below the status card.
+        update_cluster = tk.Frame(title_row, bg=BG)
         self.header_update_cluster = update_cluster
-        update_cluster.pack(anchor='e', pady=(8, 0))
-        # Keep the refresh control directly beside (and to the left of) the
-        # update-status counter so it never drops underneath the status text.
+        update_cluster.pack(side='right', anchor='e', padx=(8, 0), pady=(8, 0))
+        # Compact square refresh control (emoji only, not a text button).
         self.refresh_update_button = RoundedButton(
-            update_cluster, '⟳', lambda: self.check_update_status(force=True),
-            PANEL2, CYAN, height=28, radius=9, width=34
+            update_cluster, '🔄', lambda: self.check_update_status(force=True),
+            PANEL2, CYAN, height=36, radius=8, width=36
         )
         self.refresh_update_button.pack(side='left', padx=(0, 5))
         self.update_status_box = tk.Label(update_cluster, text='CHECKING UPDATES…',
