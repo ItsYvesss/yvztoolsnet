@@ -24,7 +24,7 @@ APP_DIR = Path(sys.executable if getattr(sys, "frozen", False) else __file__).re
 APP_EXE = APP_DIR / APP_NAME
 VERSION_FILE = APP_DIR / "version.txt"
 RELEASE_CACHE_FILE = APP_DIR / "release_cache.json"
-UPDATER_VERSION = "6.6.0"
+UPDATER_VERSION = "6.7.0"
 USER_AGENT = f"YVZTOOLS-Updater/{UPDATER_VERSION}"
 # Use certifi’s bundled Mozilla CA roots so HTTPS certificate validation works
 # in the PyInstaller one-file build as well as a normal Python installation.
