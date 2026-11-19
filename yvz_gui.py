@@ -1199,12 +1199,42 @@ class App(tk.Tk):
         return False
 
     def launch_main_setup(self):
-        chrome = core.find_chrome_exe()
-        if not chrome: return False
-        subprocess.Popen([chrome, 'chrome://inspect/#remote-debugging'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        self.after(0, lambda: messagebox.showinfo('Main Chrome • Port 9222', 'Chrome will only expose port 9222 after remote debugging is enabled for this browser instance. Open chrome://inspect/#remote-debugging, enable “Allow remote debugging for this browser instance”, then fully quit and reopen Chrome. YVZTools will check for the port. It will not read or change saved passwords or cookies.'))
-        for _ in range(60):
-            if core.debug_port_alive(): return True
+        """Launch Chrome with the requested local debugging profile without leaving a console open."""
+        chrome = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+        if not os.path.isfile(chrome):
+            chrome = core.find_chrome_exe()
+        if not chrome or not os.path.isfile(chrome):
+            self.after(0, lambda: messagebox.showerror(
+                'Chrome Not Found',
+                'Could not find Google Chrome at the standard Program Files location or through automatic detection.'
+            ))
+            return False
+
+        debug_profile = r"C:\ChromeDebugProfile"
+        os.makedirs(debug_profile, exist_ok=True)
+        args = [
+            chrome,
+            '--remote-debugging-port=9222',
+            f'--user-data-dir={debug_profile}',
+        ]
+        try:
+            # Launch Chrome directly as a detached GUI process. No CMD window remains open.
+            flags = getattr(subprocess, 'DETACHED_PROCESS', 0x00000008) | getattr(subprocess, 'CREATE_NEW_PROCESS_GROUP', 0x00000200)
+            subprocess.Popen(
+                args,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                stdin=subprocess.DEVNULL,
+                creationflags=flags if os.name == 'nt' else 0,
+                close_fds=True,
+            )
+        except OSError as exc:
+            self.after(0, lambda: messagebox.showerror('Chrome Launch Failed', str(exc)))
+            return False
+
+        for _ in range(40):
+            if core.debug_port_alive():
+                return True
             time.sleep(.5)
         return False
 
