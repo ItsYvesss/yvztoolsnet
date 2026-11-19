@@ -176,7 +176,10 @@ class RoundedButton(tk.Canvas):
 
 class SpaceBackground(tk.Canvas):
     def __init__(self, master, **kwargs):
-        super().__init__(master, highlightthickness=0, bd=0, **kwargs)
+        # Callers may provide these options; set defaults without passing them twice.
+        kwargs.setdefault('highlightthickness', 0)
+        kwargs.setdefault('bd', 0)
+        super().__init__(master, **kwargs)
         self.master = master
         self.stars = []
         self.t = 0
