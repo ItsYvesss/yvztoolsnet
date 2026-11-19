@@ -62,11 +62,11 @@ class RoundedButton(tk.Canvas):
         elif theme_name == 'yvl':
             fill, hover, fg = '#FFFFFF', '#D8D8D8', '#050505'
         elif theme_name == 'astroworld':
-            # Strictly antique gold and champagne; no blue button states.
+            # Premium black-and-gold treatment, matching YVL's strong contrast.
             if fill == PURPLE:
-                fill, hover, fg = '#8A641B', '#D9AE4A', '#FFF8E7'
+                fill, hover, fg = '#76521B', '#C89A35', '#FFF8E8'
             else:
-                fill, hover, fg = '#C49A36', '#F2D27A', '#211606'
+                fill, hover, fg = '#D5A93F', '#F4D77A', '#171006'
         self.text = text
         self.command = command
         self.fill = fill
@@ -188,9 +188,10 @@ class SpaceBackground(tk.Canvas):
         self._yvl_background_scaled = None
         self._yvl_background_size = None
         self._astroworld_background_source = None
+        self._astroworld_background_scaled = None
+        self._astroworld_background_size = None
         try:
-            # Use a pre-upscaled, high-quality PNG rather than Tk's nearest-neighbor
-            # zoom of the tiny original GIF. This keeps the Ken Carson wallpaper smooth.
+            # Use high-quality PIL scaling for both premium artwork themes.
             self._yvl_background_source = Image.open(
                 BASE / 'assets' / 'ken_carson_background.png').convert('RGB')
         except (OSError, ValueError):
@@ -200,8 +201,9 @@ class SpaceBackground(tk.Canvas):
             except (OSError, ValueError):
                 self._yvl_background_source = None
         try:
-            self._astroworld_background_source = tk.PhotoImage(file=str(BASE / 'assets' / 'astroworld_background.png'))
-        except (tk.TclError, OSError):
+            self._astroworld_background_source = Image.open(
+                BASE / 'assets' / 'astroworld_background.png').convert('RGB')
+        except (OSError, ValueError):
             self._astroworld_background_source = None
         self._seed_stars()
         self._bw, self._bh = 900, 650
@@ -263,15 +265,30 @@ class SpaceBackground(tk.Canvas):
             y1 = int(h * bands[i + 1][1])
             self.create_rectangle(0, y0, w, y1, fill=bands[i][0], outline='')
 
-        # ASTROWORLD cover art fills the background behind the app panels.
+        # ASTROWORLD uses the same full-bleed, high-quality cover treatment as YVL,
+        # with a warm dark-gold grade so the interface remains readable.
         if theme == 'astroworld' and self._astroworld_background_source is not None:
             try:
-                self.create_image(w / 2, h / 2, image=self._astroworld_background_source,
+                target_size = (max(1, int(w)), max(1, int(h)))
+                if self._astroworld_background_scaled is None or self._astroworld_background_size != target_size:
+                    source = self._astroworld_background_source
+                    scale = max(target_size[0] / source.width, target_size[1] / source.height)
+                    resized_size = (max(target_size[0], int(source.width * scale + 0.5)),
+                                    max(target_size[1], int(source.height * scale + 0.5)))
+                    resized = source.resize(resized_size, Image.Resampling.LANCZOS)
+                    left = (resized.width - target_size[0]) // 2
+                    top = (resized.height - target_size[1]) // 2
+                    cropped = resized.crop((left, top, left + target_size[0], top + target_size[1]))
+                    shade = Image.new('RGB', target_size, '#080604')
+                    cropped = Image.blend(cropped, shade, 0.34)
+                    cropped = cropped.filter(ImageFilter.UnsharpMask(radius=1.1, percent=110, threshold=3))
+                    self._astroworld_background_scaled = ImageTk.PhotoImage(cropped)
+                    self._astroworld_background_size = target_size
+                self.create_image(w / 2, h / 2, image=self._astroworld_background_scaled,
                                   anchor='center', tags='astroworld-background')
-                self.create_rectangle(0, 0, w, h, fill='#100B03',
-                                      stipple='gray50', outline='')
-            except (tk.TclError, OSError):
-                pass
+            except (tk.TclError, OSError, ValueError):
+                self._astroworld_background_scaled = None
+                self._astroworld_background_size = None
 
         # KEN CARSON artwork uses high-quality Lanczos resizing and a centered
         # cover crop. Cache by window size so resizing stays smooth and efficient.
@@ -404,9 +421,9 @@ class App(tk.Tk):
                 'PURPLE':'#9B59FF','CYAN':'#24C8FF','GREEN':'#FFD43B','BORDER':'#8B4DB5'
             },
             'astroworld': {
-                'label':'🌵 ASTROWORLD • GOLDEN HOUR', 'BG':'#090704','PANEL':'#171006','PANEL2':'#261B0B',
-                'TEXT':'#FFF4D6','MUTED':'#C7B58A','ACCENT':'#C49A36',
-                'PURPLE':'#8A641B','CYAN':'#F2D27A','GREEN':'#D9AE4A','BORDER':'#8B6828'
+                'label':'🌵 ASTROWORLD • GOLDEN HOUR', 'BG':'#080604','PANEL':'#100D09','PANEL2':'#1C160D',
+                'TEXT':'#FFF8E8','MUTED':'#B9A77F','ACCENT':'#D5A93F',
+                'PURPLE':'#8B6422','CYAN':'#F4D77A','GREEN':'#E0B94F','BORDER':'#76551D'
             }
         }
         self.answer_style = self._load_answer_style(self.theme_name)
@@ -452,16 +469,8 @@ class App(tk.Tk):
         gap = 6 if compact else 8
         bottom_pad = 10 if compact else 20
         try:
-            # Move the version/update controls below the brand before the
-            # header gets crowded; this prevents the header widgets colliding.
-            if hasattr(self, 'header_update_cluster'):
-                if width < 1080:
-                    self.header_update_cluster.pack_forget()
-                    self.header_update_cluster.pack(side='bottom', anchor='e', pady=(8, 0))
-                else:
-                    self.header_update_cluster.pack_forget()
-                    self.header_update_cluster.pack(side='right', pady=3)
-
+            # Update controls stay on their own dedicated header row.
+            # Never re-pack them during resize: this keeps refresh beside status.
             self.grid_columnconfigure(0, weight=1, minsize=190 if compact else 245)
             self.grid_columnconfigure(1, weight=2, minsize=310 if compact else 390)
             self.header_frame.grid_configure(padx=side_pad)
@@ -549,7 +558,7 @@ class App(tk.Tk):
         style.configure('Sub.TLabel', background=BG, foreground=MUTED, font=('Segoe UI', 8))
         style.configure('Card.TFrame', background=PANEL)
         style.configure('Card2.TFrame', background=PANEL2)
-        accent_text = '#111111' if self.theme_name == 'yvl' else 'white'
+        accent_text = '#111111' if self.theme_name in ('yvl', 'astroworld') else 'white'
         style.configure('Accent.TButton', font=('Segoe UI Semibold', 8), foreground=accent_text, background=BLUE, padding=(8, 6), borderwidth=0)
         style.map('Accent.TButton', foreground=[('disabled', MUTED)], background=[('active', CYAN), ('disabled', PANEL2)])
         style.configure('Purple.TButton', font=('Segoe UI Semibold', 8), foreground=accent_text, background=BLUE, padding=(8, 6), borderwidth=0)
@@ -613,9 +622,9 @@ class App(tk.Tk):
         tagline = '♛ KEN CARSON • BLACK LABEL' if self.theme_name == 'yvl' else 'NETMATH SPACE  /  DESKTOP CONTROL CENTER'
         tk.Label(brand_text, text=tagline, bg=BG, fg=BLUE, font=('Segoe UI Semibold', 8)).pack(anchor='w', pady=(0, 1))
         # Version and update status stay in the existing header.
-        update_cluster = tk.Frame(title_row, bg=BG)
+        update_cluster = tk.Frame(top, bg=BG)
         self.header_update_cluster = update_cluster
-        update_cluster.pack(side='right', pady=3)
+        update_cluster.pack(anchor='e', pady=(8, 0))
         # Keep the refresh control directly beside (and to the left of) the
         # update-status counter so it never drops underneath the status text.
         self.refresh_update_button = RoundedButton(
@@ -772,6 +781,8 @@ class App(tk.Tk):
             copy_fill, copy_hover, copy_text = '#FFFFFF', '#D9D9D9', '#050505'
         elif self.theme_name == 'oreo':
             copy_fill, copy_hover, copy_text = '#3B2923', '#6B5145', '#FFFFFF'
+        elif self.theme_name == 'astroworld':
+            copy_fill, copy_hover, copy_text = '#D5A93F', '#F4D77A', '#171006'
         elif self.theme_name == 'purple':
             copy_fill, copy_hover, copy_text = '#7540C5', '#9A68E8', '#FFFFFF'
         self.copy_answer_button = RoundedButton(solhead, 'COPY ANSWER [C]', self.copy_answer,
@@ -1813,7 +1824,7 @@ class YVZSplash(tk.Tk):
         'hacker': dict(top='#010302', bot='#04180B', star='#39FF88', ring1='#0B5E31', ring2='#168C48', accent='#19E66B', accent2='#59FF9A', text='#D7FFE4', sub='#59FF9A', muted='#6EA77D', track='#0A2414'),
         'red':    dict(top='#070203', bot='#25080D', star='#FF526A', ring1='#741526', ring2='#9B263E', accent='#F0445E', accent2='#FF7586', text='#FFF1F2', sub='#FF7586', muted='#B9868D', track='#2A0C12'),
         'oreo':   dict(top='#F7F3EE', bot='#D8CEC4', star='#3B2923', ring1='#6B5145', ring2='#9B8172', accent='#3B2923', accent2='#76665D', text='#241B18', sub='#4B352C', muted='#76665D', track='#C8B9AC'),
-        'astroworld': dict(top='#050A18', bot='#111B35', star='#F4C95D', ring1='#2F8DFF', ring2='#D6A93B', accent='#2F8DFF', accent2='#F4C95D', text='#FFF8E7', sub='#F4C95D', muted='#B8C5D9', track='#142344'),
+        'astroworld': dict(top='#080604', bot='#1B1308', star='#F4D77A', ring1='#76521B', ring2='#D5A93F', accent='#D5A93F', accent2='#F4D77A', text='#FFF8E8', sub='#F4D77A', muted='#B9A77F', track='#241A0D'),
     }
     STAGES = [
         (0.00, 'INITIALIZING CORE SYSTEMS'),
