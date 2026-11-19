@@ -123,11 +123,23 @@ class RoundedButton(tk.Canvas):
         except Exception:
             rainbow_mode = False
         if rainbow_mode and self.enabled:
+            # Fill the complete button face with a smooth spectrum; no stripe underneath.
+            import math
             spectrum = ['#FF3B30', '#FF8A00', '#FFD400', '#35C759', '#24C8FF', '#5856D6', '#BF5AF2']
-            stripe_y0, stripe_y1 = max(4, h-9), max(5, h-5)
-            stripe_w = max(1, (w-12) / len(spectrum))
-            for i, color in enumerate(spectrum):
-                self.create_rectangle(6+i*stripe_w, stripe_y0, 6+(i+1)*stripe_w, stripe_y1, fill=color, outline='')
+            steps = min(max(w, 80), 180)
+            for i in range(steps):
+                x0 = i * w / steps
+                x1 = (i + 1) * w / steps + 1
+                edge = min(x0, w - x1)
+                inset = 0
+                if edge < r:
+                    inset = r - math.sqrt(max(0, r * r - (r - edge) ** 2))
+                y0 = yoff + inset
+                y1 = h - yoff - inset
+                position = (i / max(steps - 1, 1)) * (len(spectrum) - 1)
+                segment = min(int(position), len(spectrum) - 2)
+                color = _lerp_hex(spectrum[segment], spectrum[segment + 1], position - segment)
+                self.create_rectangle(x0, y0, x1, y1, fill=color, outline='')
         self.create_text(w/2, h/2+yoff, text=self.text,
                          fill=self.fg if self.enabled else MUTED,
                          font=('Segoe UI Semibold', 9))
@@ -263,8 +275,8 @@ class App(tk.Tk):
         self.themes = {
             'dark': {
                 'label':'🌌 SPACE BLUE', 'BG':'#050817','PANEL':'#0B1230','PANEL2':'#101A42',
-                'TEXT':'#F2F6FF','MUTED':'#91A1CC','ACCENT':'#4A9BFF',
-                'PURPLE':'#9A6BFF','CYAN':'#61D8FF','GREEN':'#4BE3B0','BORDER':'#263C82'
+                'TEXT':'#F2F6FF','MUTED':'#91A1CC','ACCENT':'#318BFA',
+                'PURPLE':'#318BFA','CYAN':'#58A8FF','GREEN':'#4BE3B0','BORDER':'#263C82'
             },
             'pink': {
                 'label':'🌸 ALL PINK', 'BG':'#FFF4F9','PANEL':'#FFEAF3','PANEL2':'#FFDCEB',
@@ -278,8 +290,8 @@ class App(tk.Tk):
             },
             'red': {
                 'label':'🔥 CRIMSON', 'BG':'#090304','PANEL':'#190608','PANEL2':'#260A0E',
-                'TEXT':'#FFF1F2','MUTED':'#B9868D','ACCENT':'#F0445E',
-                'PURPLE':'#C83EAA','CYAN':'#FF7586','GREEN':'#58D89A','BORDER':'#6F1826'
+                'TEXT':'#FFF1F2','MUTED':'#B9868D','ACCENT':'#D92742',
+                'PURPLE':'#D92742','CYAN':'#F0445E','GREEN':'#58D89A','BORDER':'#6F1826'
             },
             'purple': {
                 'label':'💜 NEON PURPLE', 'BG':'#090518','PANEL':'#120A2B','PANEL2':'#1B1040',
@@ -293,8 +305,8 @@ class App(tk.Tk):
             },
             'orange': {
                 'label':'🍊 SOLAR ORANGE', 'BG':'#160A02','PANEL':'#261306','PANEL2':'#3A1D08',
-                'TEXT':'#FFF5E8','MUTED':'#C7A27E','ACCENT':'#FF8A2B',
-                'PURPLE':'#C77CFF','CYAN':'#67DFFF','GREEN':'#72E0A8','BORDER':'#8C4814'
+                'TEXT':'#FFF5E8','MUTED':'#C7A27E','ACCENT':'#D92742',
+                'PURPLE':'#D92742','CYAN':'#F0445E','GREEN':'#72E0A8','BORDER':'#8C4814'
             },
             'yvl': {
                 'label':'♛ YVL • BLACK & WHITE', 'BG':'#050505','PANEL':'#101010','PANEL2':'#1B1B1B',
@@ -382,7 +394,8 @@ class App(tk.Tk):
         BG, PANEL, PANEL2 = t['BG'], t['PANEL'], t['PANEL2']
         TEXT, MUTED = t['TEXT'], t['MUTED']
         BLUE, PURPLE, CYAN, GREEN = t['ACCENT'], t['PURPLE'], t['CYAN'], t['GREEN']
-        RED = '#D94F72' if self.theme_name == 'pink' else '#FF6B8A'
+        RED = (t['ACCENT'] if self.theme_name in ('red', 'orange') else
+               '#D94F72' if self.theme_name == 'pink' else '#FF6B8A')
 
     def toggle_theme(self):
         # Theme selector shown from the main control deck.
@@ -451,10 +464,10 @@ class App(tk.Tk):
         accent_text = '#111111' if self.theme_name == 'yvl' else 'white'
         style.configure('Accent.TButton', font=('Segoe UI Semibold', 8), foreground=accent_text, background=BLUE, padding=(8, 6), borderwidth=0)
         style.map('Accent.TButton', foreground=[('disabled', MUTED)], background=[('active', CYAN), ('disabled', PANEL2)])
-        style.configure('Purple.TButton', font=('Segoe UI Semibold', 8), foreground=accent_text, background=PURPLE, padding=(8, 6), borderwidth=0)
+        style.configure('Purple.TButton', font=('Segoe UI Semibold', 8), foreground=accent_text, background=BLUE, padding=(8, 6), borderwidth=0)
         style.map('Purple.TButton', foreground=[('disabled', MUTED)], background=[('active', CYAN), ('disabled', PANEL2)])
-        style.configure('Soft.TButton', font=('Segoe UI Semibold', 8), foreground=TEXT, background=PANEL2, padding=(8, 6), borderwidth=0)
-        style.map('Soft.TButton', background=[('active', BLUE), ('disabled', PANEL)])
+        style.configure('Soft.TButton', font=('Segoe UI Semibold', 8), foreground=accent_text, background=BLUE, padding=(8, 6), borderwidth=0)
+        style.map('Soft.TButton', foreground=[('disabled', MUTED)], background=[('active', CYAN), ('disabled', PANEL2)])
 
     def _build_ui(self):
         bg = SpaceBackground(self)
@@ -474,12 +487,19 @@ class App(tk.Tk):
         title_row.pack(fill='x')
         if self.theme_name == 'yvl':
             try:
-                self._yvl_theme_photo = tk.PhotoImage(file=str(BASE / 'assets' / 'yvl_theme_art.gif'))
-                tk.Label(title_row, image=self._yvl_theme_photo, bg=BG,
-                         highlightthickness=1, highlightbackground='#777777').pack(side='left', padx=(0, 11))
+                self._yvl_theme_source = tk.PhotoImage(file=str(BASE / 'assets' / 'yvl_theme_art.gif'))
+                scale_x = max(1, (self._yvl_theme_source.width() + 47) // 48)
+                scale_y = max(1, (self._yvl_theme_source.height() + 47) // 48)
+                self._yvl_theme_photo = self._yvl_theme_source.subsample(scale_x, scale_y)
+                yvl_icon = tk.Frame(title_row, bg='#080808', width=50, height=50,
+                                    highlightthickness=1, highlightbackground='#777777')
+                yvl_icon.pack(side='left', padx=(0, 11))
+                yvl_icon.pack_propagate(False)
+                tk.Label(yvl_icon, image=self._yvl_theme_photo, bg='#080808', bd=0).pack(expand=True)
             except Exception:
+                self._yvl_theme_source = None
                 self._yvl_theme_photo = None
-                brand_mark = tk.Frame(title_row, bg='#D8D8D8', width=42, height=42, highlightthickness=1, highlightbackground='#777777')
+                brand_mark = tk.Frame(title_row, bg='#D8D8D8', width=50, height=50, highlightthickness=1, highlightbackground='#777777')
                 brand_mark.pack(side='left', padx=(0, 11)); brand_mark.pack_propagate(False)
                 tk.Label(brand_mark, text='♛', bg='#D8D8D8', fg='#111111', font=('Segoe UI Symbol', 22)).pack(expand=True)
         else:
