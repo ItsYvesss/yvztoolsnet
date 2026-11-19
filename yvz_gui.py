@@ -53,8 +53,12 @@ class RoundedButton(tk.Canvas):
             theme_name = ''
         if theme_name == 'dark':
             fill, hover = '#318BFA', '#58A8FF'
-        elif theme_name in ('red', 'orange'):
+        elif theme_name == 'red':
             fill, hover = '#D92742', '#F0445E'
+        elif theme_name == 'orange':
+            fill, hover = '#F28C28', '#FFAD4D'
+        elif theme_name == 'yvl':
+            fill, hover, fg = '#FFFFFF', '#D8D8D8', '#050505'
         self.text = text
         self.command = command
         self.fill = fill
@@ -338,8 +342,8 @@ class App(tk.Tk):
             },
             'orange': {
                 'label':'🍊 SOLAR ORANGE', 'BG':'#160A02','PANEL':'#261306','PANEL2':'#3A1D08',
-                'TEXT':'#FFF5E8','MUTED':'#C7A27E','ACCENT':'#D92742',
-                'PURPLE':'#D92742','CYAN':'#F0445E','GREEN':'#72E0A8','BORDER':'#8C4814'
+                'TEXT':'#FFF5E8','MUTED':'#C7A27E','ACCENT':'#F28C28',
+                'PURPLE':'#F28C28','CYAN':'#FFAD4D','GREEN':'#72E0A8','BORDER':'#8C4814'
             },
             'yvl': {
                 'label':'♛ YVL • BLACK & WHITE', 'BG':'#050505','PANEL':'#101010','PANEL2':'#1B1B1B',
@@ -539,8 +543,8 @@ class App(tk.Tk):
             self._yvl_theme_photo = None
             try:
                 self._brand_icon_source = tk.PhotoImage(file=str(BASE / 'yvztools_logo.png'))
-                self._brand_icon_img = self._brand_icon_source.subsample(12, 12)
-                tk.Label(title_row, image=self._brand_icon_img, bg=BG, bd=0).pack(side='left', padx=(0, 11))
+                self._brand_icon_img = self._brand_icon_source.subsample(7, 7)
+                tk.Label(title_row, image=self._brand_icon_img, bg=BG, bd=0).pack(side='left', padx=(0, 13))
             except (tk.TclError, OSError):
                 self._brand_icon_source = None
                 brand_mark = tk.Frame(title_row, bg=BLUE, width=42, height=42, highlightthickness=1, highlightbackground=CYAN)
@@ -557,15 +561,15 @@ class App(tk.Tk):
         update_cluster.pack(side='right', pady=3)
         tk.Label(update_cluster, text=DISPLAY_VERSION.upper(), bg=PANEL2, fg=CYAN,
                  font=('Segoe UI Semibold', 8), padx=10, pady=4).pack(side='left', padx=(0, 6))
-        self.update_status_box = tk.Label(update_cluster, text='CHECKING UPDATES…',
-                 bg=PANEL2, fg=MUTED, font=('Segoe UI Semibold', 7), padx=8, pady=4,
-                 highlightthickness=1, highlightbackground='#263C82')
-        self.update_status_box.pack(side='left')
         self.refresh_update_button = RoundedButton(
             update_cluster, '↻', lambda: self.check_update_status(force=True),
             PANEL2, CYAN, height=25, radius=8, width=30
         )
-        self.refresh_update_button.pack(side='left', padx=(4, 0))
+        self.refresh_update_button.pack(side='left', padx=(0, 4))
+        self.update_status_box = tk.Label(update_cluster, text='CHECKING UPDATES…',
+                 bg=PANEL2, fg=MUTED, font=('Segoe UI Semibold', 7), padx=8, pady=4,
+                 highlightthickness=1, highlightbackground='#263C82')
+        self.update_status_box.pack(side='left')
         self.update_button = RoundedButton(update_cluster, 'UPDATE', self.open_updater,
                  BLUE, CYAN, height=25, radius=8, width=88)
         self.update_button.pack(side='left', padx=(6, 0))
@@ -1078,16 +1082,13 @@ class App(tk.Tk):
             self._schedule_update_check()
 
     def open_updater(self):
-        """Launch the installed updater beside YVZNETMATH.exe.
-
-        PyInstaller one-file builds extract __file__ into a temporary _MEIPASS
-        folder. INSTALL_DIR points to the actual directory containing the app.
-        """
+        """Launch the updater, then cleanly exit so the executable can be replaced."""
         updater_exe = INSTALL_DIR / 'YVZUPDATER.exe'
         try:
             if updater_exe.is_file():
                 subprocess.Popen([str(updater_exe)], cwd=str(INSTALL_DIR))
-                self.write_log('Updater launched.')
+                self.write_log('Updater launched • closing YVZNETMATH for a safe update.')
+                self.after(350, self._exit_for_update)
             else:
                 messagebox.showerror(
                     'Updater Not Found',
@@ -1096,6 +1097,17 @@ class App(tk.Tk):
                 self.write_log('Updater launch failed • YVZUPDATER.exe missing.')
         except OSError as exc:
             messagebox.showerror('Could Not Open Updater', str(exc))
+
+    def _exit_for_update(self):
+        """Exit without a second confirmation after the user explicitly chose UPDATE."""
+        try:
+            self._save_window_geometry()
+        except Exception:
+            pass
+        try:
+            self.destroy()
+        except tk.TclError:
+            pass
 
     def set_solution_status(self, text):
         try:

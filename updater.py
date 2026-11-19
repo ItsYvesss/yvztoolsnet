@@ -24,7 +24,7 @@ APP_DIR = Path(sys.executable if getattr(sys, "frozen", False) else __file__).re
 APP_EXE = APP_DIR / APP_NAME
 VERSION_FILE = APP_DIR / "version.txt"
 RELEASE_CACHE_FILE = APP_DIR / "release_cache.json"
-UPDATER_VERSION = "6.7.0"
+UPDATER_VERSION = "6.9.0"
 USER_AGENT = f"YVZTOOLS-Updater/{UPDATER_VERSION}"
 # Use certifi’s bundled Mozilla CA roots so HTTPS certificate validation works
 # in the PyInstaller one-file build as well as a normal Python installation.
@@ -343,8 +343,15 @@ class Updater(tk.Tk):
     def update_worker(self):
         temp_path = APP_DIR / f".{APP_NAME}.download"
         try:
-            if app_is_running():
-                raise RuntimeError("YVZNETMATH.exe is currently running. Close YVZTOOLS completely, then click Update Now again.")
+            # The main app launches this updater and exits automatically. Allow
+            # Windows a short hand-off window before attempting to replace the EXE.
+            wait_deadline = time.monotonic() + 25
+            while app_is_running():
+                if self.cancel_event.is_set():
+                    raise InterruptedError("Update cancelled while waiting for YVZNETMATH to close.")
+                if time.monotonic() >= wait_deadline:
+                    raise RuntimeError("YVZNETMATH.exe is still running. Close YVZTOOLS and retry.")
+                time.sleep(0.4)
             req = urllib.request.Request(
                 self.latest_asset["browser_download_url"],
                 headers={"User-Agent": USER_AGENT, "Accept": "application/octet-stream"},
