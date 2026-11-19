@@ -29,17 +29,17 @@ YVZTOOLS/
 
 ## Features
 
-- 🌌 YVZTools NetMath Space dashboard (v6.4)
+- 🌌 YVZTools NetMath Space dashboard (v6.5)
 - 🪟 Responsive window resizing with adaptive header spacing to prevent UI overlap
 - 🔄 Update status checks GitHub every 10 seconds and shows UP TO DATE or UPDATE AVAILABLE
 - 🚀 Cinematic v5.8 startup sequence with layered space glow, orbiting reactor, drifting particles, and eased progress animation
 - ✨ Smoother space background, button hover, and AI progress animations
 - 🔧 Fixed updater launch path for packaged Windows builds
 - 🖱️ SCAN FULL button: one tap scans the current Chrome question and sends it to Gemini (same workflow as shortcut 1), with screenshot support
-- 🌐 START CHROME (R) opens a profile chooser for Main Chrome or a separate automation profile, both using the port 9222 connection workflow
+- 🌐 START CHROME (R) opens a profile chooser; Main Chrome launches with port 9222 and C:\\ChromeDebugProfile without leaving a CMD window open
 - 🧠 Smart question solving
 - 🌐 Chrome/DevTools integration
-- 🎨 v6.4: Chocolate theme uses cocoa, caramel, and cream tones with no purple accents; restored the official YVZTools logo in the app header, title bar, and taskbar
+- 🎨 v6.5: Chocolate theme uses cocoa, caramel, and cream tones with no purple accents; restored the official YVZTools logo in the app header, title bar, and taskbar
 - 🌓 Copy Answer uses theme-aware high-contrast colors for readability
 - 🎨 Multiple themes and answer-style customization
 - ⌨️ Keyboard shortcuts for fast workflows
