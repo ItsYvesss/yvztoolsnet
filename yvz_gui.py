@@ -361,6 +361,7 @@ class App(tk.Tk):
                 'PURPLE':'#9B59FF','CYAN':'#24C8FF','GREEN':'#FFD43B','BORDER':'#8B4DB5'
             }
         }
+        self.answer_style = self._load_answer_style(self.theme_name)
         self._apply_theme_constants()
         self._build_styles()
         self._build_ui()
