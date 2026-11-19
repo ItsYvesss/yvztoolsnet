@@ -126,8 +126,8 @@ class RoundedButton(tk.Canvas):
 
     def _draw(self, pressed=False):
         self.delete('all')
-        w = max(self.winfo_width(), 80)
-        h = max(self.winfo_height(), self.height)
+        w = max(self.winfo_width(), 1)
+        h = max(self.winfo_height(), 1)
         fill = _lerp_hex(self.fill, self.hover, self._hover_progress)
         if not self.enabled:
             fill = PANEL2
@@ -623,21 +623,20 @@ class App(tk.Tk):
                    'TRAVIS SCOTT • ASTROWORLD' if self.theme_name == 'astroworld' else
                    'NETMATH SPACE  /  DESKTOP CONTROL CENTER')
         tk.Label(brand_text, text=tagline, bg=BG, fg=BLUE, font=('Segoe UI Semibold', 8)).pack(anchor='w', pady=(0, 1))
-        # Keep update controls on the SAME title row as the app branding.
-        # This prevents the refresh button from dropping below the status card.
+        # Update controls are grouped at the far right of the title row.
+        # Put the refresh square AFTER the status card so it is visibly beside it.
         update_cluster = tk.Frame(title_row, bg=BG)
         self.header_update_cluster = update_cluster
         update_cluster.pack(side='right', anchor='e', padx=(8, 0), pady=(8, 0))
-        # Compact square refresh control (emoji only, not a text button).
-        self.refresh_update_button = RoundedButton(
-            update_cluster, '🔄', lambda: self.check_update_status(force=True),
-            PANEL2, CYAN, height=36, radius=8, width=36
-        )
-        self.refresh_update_button.pack(side='left', padx=(0, 5))
         self.update_status_box = tk.Label(update_cluster, text='CHECKING UPDATES…',
                  bg=PANEL2, fg=MUTED, font=('Segoe UI Semibold', 7), padx=8, pady=5,
                  highlightthickness=1, highlightbackground='#263C82')
         self.update_status_box.pack(side='left')
+        self.refresh_update_button = RoundedButton(
+            update_cluster, '🔄', lambda: self.check_update_status(force=True),
+            PANEL2, CYAN, height=36, radius=8, width=36
+        )
+        self.refresh_update_button.pack(side='left', padx=(6, 0))
         tk.Label(update_cluster, text=DISPLAY_VERSION.upper(), bg=PANEL2, fg=CYAN,
                  font=('Segoe UI Semibold', 8), padx=10, pady=5).pack(side='left', padx=(6, 0))
         self.update_button = RoundedButton(update_cluster, 'UPDATE', self.open_updater,
