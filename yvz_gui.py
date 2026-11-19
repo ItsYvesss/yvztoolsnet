@@ -454,7 +454,9 @@ class App(tk.Tk):
                  bg=BG, fg=MUTED, font=('Segoe UI', 9)).pack(pady=(0, 14))
 
         def choose(name):
+            self._save_answer_style_for_theme()
             self.theme_name = name
+            self.answer_style = self._load_answer_style(name)
             cfg = core.load_config()
             cfg['theme'] = name
             core.save_config(cfg)
@@ -738,19 +740,47 @@ class App(tk.Tk):
         self.log.see('end')
         self.log.configure(state='disabled')
 
-    def _load_answer_style(self):
+    def _load_answer_style(self, theme_name=None):
+        """Load the output style saved specifically for the selected theme."""
         cfg = core.load_config()
-        saved = cfg.get('answer_style', {}) if isinstance(cfg, dict) else {}
+        theme_name = theme_name or self.theme_name
+        styles = cfg.get('answer_styles', {}) if isinstance(cfg, dict) else {}
+        saved = styles.get(theme_name, {}) if isinstance(styles, dict) else {}
+
+        # Migrate the old single-style setting to the currently active theme.
+        if not saved and isinstance(cfg, dict):
+            legacy = cfg.get('answer_style', {})
+            if isinstance(legacy, dict) and legacy:
+                saved = dict(legacy)
+                styles = dict(styles) if isinstance(styles, dict) else {}
+                styles[theme_name] = dict(saved)
+                cfg['answer_styles'] = styles
+                cfg.pop('answer_style', None)
+                core.save_config(cfg)
+
+        palette = self.themes.get(theme_name, self.themes['dark'])
+        default_color = palette['TEXT']
         try:
             size = max(8, min(24, int(saved.get('size', 10))))
         except (TypeError, ValueError):
             size = 10
         family = str(saved.get('family', 'Segoe UI'))
-        color = str(saved.get('color', '#F2F6FF'))
+        color = str(saved.get('color', default_color))
         if not re.fullmatch(r'#[0-9A-Fa-f]{6}', color):
-            color = '#F2F6FF'
+            color = default_color
         return {'family': family, 'size': size, 'color': color,
                 'bold': bool(saved.get('bold', False))}
+
+    def _save_answer_style_for_theme(self):
+        """Save the current output style without overwriting other themes."""
+        cfg = core.load_config()
+        styles = cfg.get('answer_styles', {})
+        if not isinstance(styles, dict):
+            styles = {}
+        styles[self.theme_name] = dict(self.answer_style)
+        cfg['answer_styles'] = styles
+        cfg.pop('answer_style', None)
+        core.save_config(cfg)
 
     def edit_answer_style(self):
         win = tk.Toplevel(self)
@@ -763,8 +793,8 @@ class App(tk.Tk):
 
         tk.Label(win, text='ANSWER OUTPUT STYLE', bg=BG, fg=TEXT,
                  font=('Segoe UI Black', 15)).pack(pady=(18, 3))
-        tk.Label(win, text='Customize the text shown in the AI solution panel.',
-                 bg=BG, fg=MUTED, font=('Segoe UI', 9)).pack(pady=(0, 14))
+        tk.Label(win, text=f'Customize the AI output for {self.themes[self.theme_name]["label"]}. Each theme saves its own style.',
+                 bg=BG, fg=MUTED, font=('Segoe UI', 9), wraplength=390).pack(pady=(0, 14))
         form = tk.Frame(win, bg=PANEL)
         form.pack(fill='x', padx=20, pady=4)
 
@@ -846,9 +876,7 @@ class App(tk.Tk):
                 return
             self.answer_style = {'family': family_var.get(), 'size': size,
                                  'color': color, 'bold': bold_var.get()}
-            cfg = core.load_config()
-            cfg['answer_style'] = dict(self.answer_style)
-            core.save_config(cfg)
+            self._save_answer_style_for_theme()
             current = self.solution.get('1.0', 'end-1c')
             self.set_text(self.solution, current)
             self.write_log('Answer output style saved.')
