@@ -9,7 +9,7 @@ a = Analysis(
     ['yvz_gui.py'],
     pathex=[],
     binaries=[],
-    datas=[('yvznetmath_core.py', '.'), ('yvztools.ico', '.'), ('yvztools_logo.png', '.')],
+    datas=[('yvznetmath_core.py', '.'), ('yvztools.ico', '.'), ('yvztools_logo.png', '.'), ('assets/yvl_theme_art.gif', 'assets')],
     hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
