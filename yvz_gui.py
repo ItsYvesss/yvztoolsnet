@@ -162,6 +162,7 @@ class SpaceBackground(tk.Canvas):
         self.running = True
         self._yvl_background_source = None
         self._yvl_background_scaled = None
+        self._yvl_background_scale = 0
         try:
             self._yvl_background_source = tk.PhotoImage(file=str(BASE / 'assets' / 'yvl_theme_art.gif'))
         except (tk.TclError, OSError):
@@ -229,7 +230,9 @@ class SpaceBackground(tk.Canvas):
                 source = self._yvl_background_source
                 scale = max(1, math.ceil(max(w / source.width(), h / source.height())))
                 if scale > 1:
-                    self._yvl_background_scaled = source.zoom(scale, scale)
+                    if self._yvl_background_scaled is None or self._yvl_background_scale != scale:
+                        self._yvl_background_scaled = source.zoom(scale, scale)
+                        self._yvl_background_scale = scale
                     background_image = self._yvl_background_scaled
                 else:
                     background_image = source
