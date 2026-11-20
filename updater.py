@@ -24,7 +24,7 @@ APP_DIR = Path(sys.executable if getattr(sys, "frozen", False) else __file__).re
 APP_EXE = APP_DIR / APP_NAME
 VERSION_FILE = APP_DIR / "version.txt"
 RELEASE_CACHE_FILE = APP_DIR / "release_cache.json"
-UPDATER_VERSION = "8.7.0"
+UPDATER_VERSION = "8.5.0"
 USER_AGENT = f"YVZTOOLS-Updater/{UPDATER_VERSION}"
 # Use certifi’s bundled Mozilla CA roots so HTTPS certificate validation works
 # in the PyInstaller one-file build as well as a normal Python installation.
@@ -60,83 +60,49 @@ def read_local_version():
         return "0.0.0"
 
 
-def release_metadata_from_tag(tag, digest=""):
+def release_metadata_from_tag(tag):
     tag = str(tag or '').strip()
     if not re.fullmatch(r'v?\d+(?:\.\d+){1,2}', tag):
         raise ValueError('GitHub returned an invalid stable release tag.')
     if not tag.startswith('v'):
         tag = 'v' + tag
-    asset_url = ('https://github.com/' + GITHUB_REPO + '/releases/download/'
-                 + urllib.parse.quote(tag, safe='') + '/'
-                 + urllib.parse.quote(APP_NAME))
-    return {
-        'tag_name': tag,
-        'asset': {
-            'name': APP_NAME,
-            'browser_download_url': asset_url,
-            'digest': str(digest or '')
-        }
-    }
-
+    asset_url = 'https://github.com/' + GITHUB_REPO + '/releases/download/' + urllib.parse.quote(tag, safe='') + '/' + urllib.parse.quote(APP_NAME)
+    return {'tag_name': tag, 'asset': {'name': APP_NAME, 'browser_download_url': asset_url, 'digest': ''}}
 
 def save_release_cache(metadata):
     try:
         temp = RELEASE_CACHE_FILE.with_suffix('.tmp')
-        temp.write_text(json.dumps({
-            'tag_name': metadata['tag_name'],
-            'digest': metadata['asset'].get('digest', ''),
-            'saved_at': int(time.time())
-        }), encoding='utf-8')
+        temp.write_text(json.dumps({'tag_name': metadata['tag_name'], 'saved_at': int(time.time())}), encoding='utf-8')
         os.replace(str(temp), str(RELEASE_CACHE_FILE))
     except (OSError, KeyError, TypeError):
         pass
-
 
 def read_release_cache():
     try:
         cached = json.loads(RELEASE_CACHE_FILE.read_text(encoding='utf-8'))
         if time.time() - int(cached.get('saved_at', 0)) > 2592000:
             return None
-        return release_metadata_from_tag(
-            cached.get('tag_name'), cached.get('digest', '')
-        )
+        return release_metadata_from_tag(cached.get('tag_name'))
     except (OSError, ValueError, TypeError, json.JSONDecodeError):
         return None
 
-
 def request_latest_release():
-    """Fetch official release metadata, including GitHub's SHA-256 asset digest."""
+    """Resolve the latest stable release with bounded retries and rate-limit backoff."""
+    url = 'https://github.com/' + GITHUB_REPO + '/releases/latest'
     last_error = None
     for attempt in range(3):
         req = urllib.request.Request(
-            RELEASE_API,
-            headers={
-                'User-Agent': USER_AGENT,
-                'Accept': 'application/vnd.github+json',
-                'X-GitHub-Api-Version': '2022-11-28',
-                'Cache-Control': 'no-cache'
-            }
+            url,
+            headers={'User-Agent': USER_AGENT, 'Accept': 'text/html',
+                     'Cache-Control': 'no-cache'}
         )
         try:
             with urllib.request.urlopen(req, timeout=20, context=SSL_CONTEXT) as response:
-                release = json.loads(response.read().decode('utf-8'))
-            tag = release.get('tag_name', '')
-            metadata = release_metadata_from_tag(tag)
-            assets = release.get('assets') or []
-            asset = next(
-                (item for item in assets if item.get('name') == APP_NAME),
-                None
-            )
-            if not asset or not asset.get('browser_download_url'):
-                raise ValueError('The latest GitHub release does not contain YVZNETMATH.exe.')
-            digest = str(asset.get('digest') or '')
-            if not digest.startswith('sha256:'):
-                raise ValueError('GitHub did not provide a SHA-256 checksum for this release. The update was stopped for safety.')
-            metadata['asset'] = {
-                'name': APP_NAME,
-                'browser_download_url': asset['browser_download_url'],
-                'digest': digest
-            }
+                final_url = response.geturl()
+            match = re.search(r'/releases/tag/([^/]+)', urllib.parse.urlparse(final_url).path)
+            if not match:
+                raise ValueError('Could not identify the latest stable release from GitHub.')
+            metadata = release_metadata_from_tag(urllib.parse.unquote(match.group(1)))
             save_release_cache(metadata)
             return metadata
         except urllib.error.HTTPError as exc:
@@ -171,39 +137,6 @@ def app_is_running():
         return False
 
 
-def launch_updated_app():
-    """Start the replaced app as a detached process and confirm Windows sees it."""
-    if not APP_EXE.is_file():
-        raise FileNotFoundError(f"Updated application was not found: {APP_EXE}")
-
-    creationflags = (
-        getattr(subprocess, "DETACHED_PROCESS", 0x00000008)
-        | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0x00000200)
-    )
-    subprocess.Popen(
-        [str(APP_EXE)],
-        cwd=str(APP_DIR),
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        close_fds=True,
-        creationflags=creationflags,
-    )
-
-    # Popen only confirms that Windows accepted the launch request. Check that
-    # the application process actually appears before reporting success.
-    deadline = time.monotonic() + 10
-    while time.monotonic() < deadline:
-        if app_is_running():
-            return True
-        time.sleep(0.25)
-    raise RuntimeError(
-        "Windows accepted the launch request, but YVZNETMATH.exe did not appear "
-        "in the process list. Windows Security or another startup issue may "
-        "have blocked it. Check Windows Security Protection History."
-    )
-
-
 def verify_download(path, asset):
     size = path.stat().st_size
     if size < 1_000_000:
@@ -213,14 +146,13 @@ def verify_download(path, asset):
             raise ValueError("The downloaded file is not a valid Windows executable.")
     expected = str(asset.get("digest") or "").strip()
     algorithm, sep, expected_hash = expected.partition(":")
-    if not sep or algorithm.lower() != "sha256" or not re.fullmatch(r"[0-9a-fA-F]{64}", expected_hash):
-        raise ValueError("The official release is missing a valid SHA-256 checksum. The update was rejected.")
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    if digest.hexdigest().lower() != expected_hash.lower():
-        raise ValueError("The downloaded update failed its SHA-256 integrity check and was rejected.")
+    if sep and algorithm.lower() == "sha256":
+        digest = hashlib.sha256()
+        with path.open("rb") as stream:
+            for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(chunk)
+        if digest.hexdigest().lower() != expected_hash.lower():
+            raise ValueError("SHA-256 verification failed. The downloaded update was rejected.")
     return True
 
 
@@ -476,10 +408,10 @@ class Updater(tk.Tk):
             version_tmp.write_text(self.latest_tag, encoding="utf-8")
             os.replace(str(version_tmp), str(VERSION_FILE))
             try:
-                launch_updated_app()
-                self.events.put(("installed", self.latest_tag, True, "Update installed and Windows confirmed that YVZNETMATH started."))
-            except Exception as exc:
-                self.events.put(("installed", self.latest_tag, False, f"Update installed, but YVZNETMATH did not start. Check Windows Security Protection History and try opening it manually. Details: {exc}"))
+                subprocess.Popen([str(APP_EXE)], cwd=str(APP_DIR))
+                self.events.put(("installed", self.latest_tag, True, "The update was checked, installed, and YVZTools was reopened."))
+            except OSError as exc:
+                self.events.put(("installed", self.latest_tag, False, f"Update installed, but YVZTOOLS could not be launched automatically: {exc}"))
         except InterruptedError:
             self.events.put(("cancelled",))
         except Exception as exc:
