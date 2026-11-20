@@ -604,28 +604,7 @@ class App(tk.Tk):
         self.header_frame = top
         title_row = tk.Frame(top, bg=BG)
         title_row.pack(fill='x')
-        # Premium themes get their matching cover beside the title.
-        # All other themes keep the clean text-only header.
-        header_cover = None
-        cover_path = (BASE / 'assets' / 'astroworld_cover.png'
-                      if self.theme_name == 'astroworld' else
-                      BASE / 'assets' / 'yvl_theme_art.gif'
-                      if self.theme_name == 'yvl' else None)
-        if cover_path is not None:
-            try:
-                with Image.open(cover_path) as cover_source:
-                    cover_source.seek(0)
-                    cover_image = cover_source.convert('RGBA')
-                    cover_image.thumbnail((64, 64), Image.Resampling.LANCZOS)
-                    cover_canvas = Image.new('RGBA', (64, 64), (0, 0, 0, 0))
-                    cover_canvas.alpha_composite(
-                        cover_image, ((64-cover_image.width)//2, (64-cover_image.height)//2))
-                header_cover = ImageTk.PhotoImage(cover_canvas)
-                self._theme_header_cover = header_cover
-                tk.Label(title_row, image=header_cover, bg=BG, bd=0,
-                         highlightthickness=0).pack(side='left', padx=(0, 13))
-            except (tk.TclError, OSError, ValueError):
-                self._theme_header_cover = None
+        # Keep the header clean: show the YVZTOOLS title without a logo beside it.
         brand_text = tk.Frame(title_row, bg=BG)
         brand_text.pack(side='left', pady=(1, 0))
         tk.Label(brand_text, text='YVZTOOLS', bg=BG, fg=TEXT, font=('Segoe UI Black', 22)).pack(anchor='w')
