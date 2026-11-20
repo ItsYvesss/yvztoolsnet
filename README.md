@@ -2,7 +2,7 @@
 
 ## DOWNLOAD YVZTOOLS
 
-### ⭐ [DOWNLOAD YVZTOOLS INSTALLER](https://github.com/ItsYvesss/yvztoolsnet/releases/download/v8.8/YVZTOOLS-INSTALLER.exe)
+### ⭐ [DOWNLOAD YVZTOOLS INSTALLER](https://github.com/ItsYvesss/yvztoolsnet/releases/download/v8.9/YVZTOOLS-INSTALLER.exe)
 
 Download the installer, run **YVZTOOLS-INSTALLER.exe**, choose where you want the folder saved, and the installer will:
 

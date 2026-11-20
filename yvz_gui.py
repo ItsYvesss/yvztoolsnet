@@ -55,8 +55,8 @@ class RoundedButton(tk.Canvas):
             theme_name = ''
         if theme_name == 'dark':
             fill, hover = '#318BFA', '#58A8FF'
-        elif theme_name == 'red':
-            fill, hover = '#D92742', '#F0445E'
+        elif theme_name in ('red', 'housewife'):
+            fill, hover = ('#D92742', '#F0445E') if theme_name == 'red' else ('#E52E49', '#FF526B')
         elif theme_name == 'orange':
             fill, hover = '#F28C28', '#FFAD4D'
         elif theme_name == 'yvl':
@@ -194,6 +194,13 @@ class SpaceBackground(tk.Canvas):
         self._astroworld_background_source = None
         self._astroworld_background_scaled = None
         self._astroworld_background_size = None
+        self._housewife_background_source = None
+        self._housewife_background_scaled = None
+        self._housewife_background_size = None
+        try:
+            self._housewife_background_source = Image.open(BASE / 'assets' / 'housewife_background.png').convert('RGB')
+        except (OSError, ValueError):
+            self._housewife_background_source = None
         try:
             # Use high-quality PIL scaling for both premium artwork themes.
             self._yvl_background_source = Image.open(
@@ -260,7 +267,8 @@ class SpaceBackground(tk.Canvas):
             'red': ([('#070203',0.0),('#130407',.3),('#22070B',.62),('#090304',1.0)], '#FF526A','#741526','#9B263E'),
             'yvl': ([('#08060D',0.0),('#120F1B',.3),('#211A30',.62),('#09070F',1.0)], '#B69CFF','#594477','#9B7BFF'),
             'oreo': ([('#F7F3EE',0.0),('#E7E0D8',.3),('#C9BFB4',.62),('#F7F3EE',1.0)], '#3B2923','#6B5145','#241B18'),
-            'astroworld': ([('#080603',0.0),('#171006',.35),('#241807',.72),('#090704',1.0)], '#E8C66A','#9A7024','#D5A943')
+            'astroworld': ([('#080603',0.0),('#171006',.35),('#241807',.72),('#090704',1.0)], '#E8C66A','#9A7024','#D5A943'),
+            'housewife': ([('#180609',0.0),('#2B0A10',.35),('#4A111A',.72),('#160509',1.0)], '#FF7185','#9D1E35','#F0445E')
         }
         bands, star, arc1, arc2 = palettes.get(theme, palettes['dark'])
 
@@ -317,9 +325,25 @@ class SpaceBackground(tk.Canvas):
                 self._yvl_background_scaled = None
                 self._yvl_background_size = None
 
-        # Premium artwork themes use the image itself as the complete wallpaper.
-        # Keep animated space effects on the other themes only.
-        if theme in ('astroworld', 'yvl'):
+        if theme == 'housewife' and self._housewife_background_source is not None:
+            try:
+                target_size = (max(1, int(w)), max(1, int(h)))
+                if self._housewife_background_scaled is None or self._housewife_background_size != target_size:
+                    source = self._housewife_background_source
+                    scale = max(target_size[0] / source.width, target_size[1] / source.height)
+                    resized_size = (max(target_size[0], int(source.width * scale + 0.5)), max(target_size[1], int(source.height * scale + 0.5)))
+                    resized = source.resize(resized_size, Image.Resampling.LANCZOS)
+                    left = (resized.width - target_size[0]) // 2
+                    top = (resized.height - target_size[1]) // 2
+                    cropped = resized.crop((left, top, left + target_size[0], top + target_size[1]))
+                    cropped = Image.blend(cropped, Image.new('RGB', target_size, '#170307'), 0.28)
+                    self._housewife_background_scaled = ImageTk.PhotoImage(cropped)
+                    self._housewife_background_size = target_size
+                self.create_image(0, 0, image=self._housewife_background_scaled, anchor='nw', tags='housewife-background')
+            except (tk.TclError, OSError, ValueError):
+                self._housewife_background_scaled = None
+                self._housewife_background_size = None
+        if theme in ('astroworld', 'yvl', 'housewife'):
             return
 
         # Slow parallax stars. The phase creates a subtle twinkle.
@@ -445,8 +469,19 @@ class App(tk.Tk):
                 'label':'🌵 ASTROWORLD • GOLDEN HOUR', 'BG':'#080604','PANEL':'#100D09','PANEL2':'#1C160D',
                 'TEXT':'#FFF8E8','MUTED':'#B9A77F','ACCENT':'#D5A93F',
                 'PURPLE':'#8B6422','CYAN':'#F4D77A','GREEN':'#E0B94F','BORDER':'#76551D'
+            },
+            'housewife': {
+                'label':'💋 HOUSEWIFE', 'BG':'#170509','PANEL':'#260910','PANEL2':'#381019',
+                'TEXT':'#FFF0F2','MUTED':'#D49AA4','ACCENT':'#E52E49',
+                'PURPLE':'#C51F3B','CYAN':'#FF7185','GREEN':'#F0445E','BORDER':'#8F1B30'
             }
         }
+        if self.theme_name == 'housewife':
+            try:
+                self._housewife_title_icon = tk.PhotoImage(file=str(BASE / 'assets' / 'housewife_icon.png'))
+                self.iconphoto(True, self._housewife_title_icon)
+            except (tk.TclError, OSError):
+                self._housewife_title_icon = None
         self.answer_style = self._load_answer_style(self.theme_name)
         self._apply_theme_constants()
         self._build_styles()
@@ -552,22 +587,28 @@ class App(tk.Tk):
         canvas.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side='right', fill='y', padx=(0, 8), pady=8)
         canvas.pack(side='left', fill='both', expand=True, padx=(12, 0), pady=8)
-        list_frame = tk.Frame(canvas, bg=BG)
-        window_id = canvas.create_window((0, 0), window=list_frame, anchor='nw')
-        list_frame.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
+        grid_frame = tk.Frame(canvas, bg=BG)
+        window_id = canvas.create_window((0, 0), window=grid_frame, anchor='nw')
+        grid_frame.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
         canvas.bind('<Configure>', lambda e: canvas.itemconfigure(window_id, width=e.width))
         canvas.bind_all('<MouseWheel>', lambda e: canvas.yview_scroll(int(-1 * (e.delta / 120)), 'units'))
         win.bind('<Destroy>', lambda e: win.unbind_all('<MouseWheel>') if e.widget is win else None)
-        for name in self.themes:
+        columns = 3
+        for index, name in enumerate(self.themes):
             t = self.themes[name]
-            card = tk.Frame(list_frame, bg=t['PANEL'], highlightthickness=1,
-                            highlightbackground=t['BORDER'])
-            card.pack(fill='x', padx=12, pady=4, ipady=2)
+            card = tk.Frame(grid_frame, bg=t['PANEL'], highlightthickness=2,
+                            highlightbackground=t['ACCENT'], width=142, height=112)
+            card.grid(row=index // columns, column=index % columns, padx=7, pady=7, sticky='nsew')
+            card.grid_propagate(False)
+            tk.Frame(card, bg=t['ACCENT'], height=8).pack(fill='x')
             btn = tk.Button(card, text=t['label'], command=lambda x=name: choose(x),
                             bg=t['PANEL2'], fg=t['TEXT'], activebackground=t['ACCENT'],
                             activeforeground='white', relief='flat', bd=0,
+                            wraplength=122, justify='center',
                             font=('Segoe UI Semibold', 9), cursor='hand2')
-            btn.pack(fill='x', padx=7, pady=5)
+            btn.pack(fill='both', expand=True, padx=7, pady=7)
+        for col in range(columns):
+            grid_frame.grid_columnconfigure(col, weight=1)
 
 
     def _build_styles(self):
@@ -1815,6 +1856,7 @@ class YVZSplash(tk.Tk):
         'red':    dict(top='#070203', bot='#25080D', star='#FF526A', ring1='#741526', ring2='#9B263E', accent='#F0445E', accent2='#FF7586', text='#FFF1F2', sub='#FF7586', muted='#B9868D', track='#2A0C12'),
         'oreo':   dict(top='#F7F3EE', bot='#D8CEC4', star='#3B2923', ring1='#6B5145', ring2='#9B8172', accent='#3B2923', accent2='#76665D', text='#241B18', sub='#4B352C', muted='#76665D', track='#C8B9AC'),
         'astroworld': dict(top='#080604', bot='#1B1308', star='#F4D77A', ring1='#76521B', ring2='#D5A93F', accent='#D5A93F', accent2='#F4D77A', text='#FFF8E8', sub='#F4D77A', muted='#B9A77F', track='#241A0D'),
+        'housewife': dict(top='#170509', bot='#3B0D18', star='#FF7185', ring1='#8F1B30', ring2='#E52E49', accent='#E52E49', accent2='#FF7185', text='#FFF0F2', sub='#FF7185', muted='#D49AA4', track='#42101B'),
     }
     STAGES = [
         (0.00, 'INITIALIZING CORE SYSTEMS'),

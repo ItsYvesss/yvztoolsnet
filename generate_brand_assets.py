@@ -8,6 +8,7 @@ from PIL import Image, ImageOps, ImageEnhance, ImageDraw, ImageFont, ImageFilter
 ROOT = Path(__file__).resolve().parent
 ASSET_DIR = ROOT / "assets"
 LOGO_URL = "https://i.ibb.co/KcmZG1kW/36c0cea0-e0b8-4605-958a-fd248ac0f727.webp"
+HOUSEWIFE_URL = "https://i.ibb.co/cSfBKWRk/image.png"
 ASTROWORLD_URLS = [
     "https://i.ibb.co/vrsT7Qg/travis-scott-astroworld-cover-art-full.webp",
     "https://upload.wikimedia.org/wikipedia/commons/7/73/Astroworldcover.jpg",
@@ -115,7 +116,17 @@ def main():
     background.save(ASSET_DIR / "astroworld_background.png", optimize=True)
 
     make_ken_carson_background()
-    print("Generated Eve/YVZTools icon, ASTROWORLD theme art and smooth Ken Carson wallpaper.")
+    # HOUSEWIFE artwork is used as the full theme wallpaper and title-bar icon.
+    try:
+        housewife_source = download_image(HOUSEWIFE_URL, "HOUSEWIFE theme artwork")
+        housewife_background = ImageOps.fit(housewife_source, (2560, 1440), method=Image.Resampling.LANCZOS)
+        housewife_background = ImageEnhance.Brightness(housewife_background).enhance(0.72)
+        housewife_background.save(ASSET_DIR / "housewife_background.png", optimize=True)
+        housewife_icon = ImageOps.fit(housewife_source, (512, 512), method=Image.Resampling.LANCZOS)
+        housewife_icon.save(ASSET_DIR / "housewife_icon.png", optimize=True)
+    except RuntimeError as exc:
+        raise RuntimeError("HOUSEWIFE theme artwork could not be downloaded; refusing to build without the requested art.") from exc
+    print("Generated Eve/YVZTools icon, ASTROWORLD, Ken Carson and HOUSEWIFE theme art.")
 
 
 if __name__ == "__main__":
