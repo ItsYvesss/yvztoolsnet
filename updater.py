@@ -24,7 +24,7 @@ APP_DIR = Path(sys.executable if getattr(sys, "frozen", False) else __file__).re
 APP_EXE = APP_DIR / APP_NAME
 VERSION_FILE = APP_DIR / "version.txt"
 RELEASE_CACHE_FILE = APP_DIR / "release_cache.json"
-UPDATER_VERSION = "8.6.0"
+UPDATER_VERSION = "8.7.0"
 USER_AGENT = f"YVZTOOLS-Updater/{UPDATER_VERSION}"
 # Use certifi’s bundled Mozilla CA roots so HTTPS certificate validation works
 # in the PyInstaller one-file build as well as a normal Python installation.
@@ -169,6 +169,39 @@ def app_is_running():
     except (OSError, subprocess.SubprocessError):
         # Atomic replacement remains the final safety check if process detection fails.
         return False
+
+
+def launch_updated_app():
+    """Start the replaced app as a detached process and confirm Windows sees it."""
+    if not APP_EXE.is_file():
+        raise FileNotFoundError(f"Updated application was not found: {APP_EXE}")
+
+    creationflags = (
+        getattr(subprocess, "DETACHED_PROCESS", 0x00000008)
+        | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0x00000200)
+    )
+    subprocess.Popen(
+        [str(APP_EXE)],
+        cwd=str(APP_DIR),
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        close_fds=True,
+        creationflags=creationflags,
+    )
+
+    # Popen only confirms that Windows accepted the launch request. Check that
+    # the application process actually appears before reporting success.
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline:
+        if app_is_running():
+            return True
+        time.sleep(0.25)
+    raise RuntimeError(
+        "Windows accepted the launch request, but YVZNETMATH.exe did not appear "
+        "in the process list. Windows Security or another startup issue may "
+        "have blocked it. Check Windows Security Protection History."
+    )
 
 
 def verify_download(path, asset):
@@ -443,10 +476,10 @@ class Updater(tk.Tk):
             version_tmp.write_text(self.latest_tag, encoding="utf-8")
             os.replace(str(version_tmp), str(VERSION_FILE))
             try:
-                subprocess.Popen([str(APP_EXE)], cwd=str(APP_DIR))
-                self.events.put(("installed", self.latest_tag, True, "The update was checked, installed, and YVZTools was reopened."))
-            except OSError as exc:
-                self.events.put(("installed", self.latest_tag, False, f"Update installed, but YVZTOOLS could not be launched automatically: {exc}"))
+                launch_updated_app()
+                self.events.put(("installed", self.latest_tag, True, "Update installed and Windows confirmed that YVZNETMATH started."))
+            except Exception as exc:
+                self.events.put(("installed", self.latest_tag, False, f"Update installed, but YVZNETMATH did not start. Check Windows Security Protection History and try opening it manually. Details: {exc}"))
         except InterruptedError:
             self.events.put(("cancelled",))
         except Exception as exc:
