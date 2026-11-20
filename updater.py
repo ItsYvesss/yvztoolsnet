@@ -62,7 +62,7 @@ def read_local_version():
 
 def release_metadata_from_tag(tag, digest=""):
     tag = str(tag or '').strip()
-    if not re.fullmatch(r'v?\\d+(?:\\.\\d+){1,2}', tag):
+    if not re.fullmatch(r'v?\d+(?:\.\d+){1,2}', tag):
         raise ValueError('GitHub returned an invalid stable release tag.')
     if not tag.startswith('v'):
         tag = 'v' + tag
