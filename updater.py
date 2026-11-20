@@ -173,100 +173,127 @@ class Updater(tk.Tk):
         self.latest_asset = None
         self.current_version = read_local_version()
 
-        BG = "#F4F6FA"
-        WHITE = "#FFFFFF"
-        TEXT = "#182230"
-        MUTED = "#697586"
-        BLUE = "#2867D9"
-        BORDER = "#E1E6EF"
-        GREEN = "#16865B"
+        # Deep-blue YVZTools updater interface
+        BG = "#071426"
+        PANEL = "#0D2039"
+        PANEL_ALT = "#102945"
+        TEXT = "#F4F8FF"
+        MUTED = "#91A9C7"
+        BLUE = "#287BFF"
+        BLUE_HOVER = "#4590FF"
+        BORDER = "#1D3B5E"
+        GREEN = "#39D6A0"
 
-        outer = tk.Frame(self, bg=BG, padx=28, pady=24)
+        self.geometry("720x540")
+        self.minsize(680, 510)
+        self.configure(bg=BG)
+
+        outer = tk.Frame(self, bg=BG, padx=30, pady=25)
         outer.pack(fill="both", expand=True)
 
+        # Branded header with a strong blue accent.
         header = tk.Frame(outer, bg=BG)
-        header.pack(fill="x", pady=(0, 22))
-        tk.Label(header, text="YVZTOOLS", bg=BG, fg=TEXT,
-                 font=("Segoe UI", 21, "bold")).pack(anchor="w")
-        tk.Label(header, text="Software updater", bg=BG, fg=MUTED,
-                 font=("Segoe UI", 10)).pack(anchor="w", pady=(2, 0))
+        header.pack(fill="x", pady=(0, 20))
+        brand = tk.Frame(header, bg=BG)
+        brand.pack(side="left", fill="x", expand=True)
+        tk.Label(brand, text="YVZTOOLS", bg=BG, fg=TEXT,
+                 font=("Segoe UI", 23, "bold")).pack(anchor="w")
+        tk.Label(brand, text="UPDATE CENTER  /  KEEP YOUR TOOLS CURRENT",
+                 bg=BG, fg="#6FAAFF", font=("Segoe UI", 8, "bold")).pack(anchor="w", pady=(3, 0))
+        self.header_badge = tk.Label(
+            header, text="●  OFFICIAL RELEASE", bg="#102E52", fg="#77B7FF",
+            font=("Segoe UI", 8, "bold"), padx=13, pady=8)
+        self.header_badge.pack(side="right", anchor="center")
 
-        panel = tk.Frame(outer, bg=WHITE, highlightbackground=BORDER,
-                         highlightthickness=1, padx=20, pady=18)
+        # Main status panel.
+        panel = tk.Frame(outer, bg=PANEL, highlightbackground=BORDER,
+                         highlightthickness=1, padx=22, pady=20)
         panel.pack(fill="x")
         self.status_var = tk.StringVar(value="Checking for updates…")
         self.detail_var = tk.StringVar(value="Connecting to GitHub.")
-        tk.Label(panel, textvariable=self.status_var, bg=WHITE, fg=TEXT,
-                 font=("Segoe UI", 15, "bold"), anchor="w").pack(fill="x")
-        tk.Label(panel, textvariable=self.detail_var, bg=WHITE, fg=MUTED,
+        status_row = tk.Frame(panel, bg=PANEL)
+        status_row.pack(fill="x")
+        self.status_dot = tk.Label(status_row, text="●", bg=PANEL, fg=BLUE,
+                                   font=("Segoe UI", 16, "bold"))
+        self.status_dot.pack(side="left", padx=(0, 10))
+        tk.Label(status_row, textvariable=self.status_var, bg=PANEL, fg=TEXT,
+                 font=("Segoe UI", 16, "bold"), anchor="w").pack(side="left", fill="x", expand=True)
+        tk.Label(panel, textvariable=self.detail_var, bg=PANEL, fg=MUTED,
                  font=("Segoe UI", 9), anchor="w", justify="left",
-                 wraplength=570).pack(fill="x", pady=(6, 16))
+                 wraplength=610).pack(fill="x", pady=(8, 19))
 
-        versions = tk.Frame(panel, bg=WHITE)
+        versions = tk.Frame(panel, bg=PANEL)
         versions.pack(fill="x")
-        current_card = tk.Frame(versions, bg="#F7F9FC", highlightbackground=BORDER,
-                                highlightthickness=1, padx=13, pady=11)
+        current_card = tk.Frame(versions, bg=PANEL_ALT, highlightbackground=BORDER,
+                                highlightthickness=1, padx=15, pady=13)
         current_card.pack(side="left", fill="x", expand=True, padx=(0, 7))
-        latest_card = tk.Frame(versions, bg="#F7F9FC", highlightbackground=BORDER,
-                               highlightthickness=1, padx=13, pady=11)
+        latest_card = tk.Frame(versions, bg="#102F55", highlightbackground="#24558B",
+                               highlightthickness=1, padx=15, pady=13)
         latest_card.pack(side="left", fill="x", expand=True, padx=(7, 0))
         self.current_var = tk.StringVar(value=f"Installed: {display_version(self.current_version)}")
         self.latest_var = tk.StringVar(value="Latest: Checking…")
-        tk.Label(current_card, text="CURRENT VERSION", bg="#F7F9FC", fg=MUTED,
+        tk.Label(current_card, text="YOUR VERSION", bg=PANEL_ALT, fg=MUTED,
                  font=("Segoe UI", 8, "bold")).pack(anchor="w")
-        tk.Label(current_card, textvariable=self.current_var, bg="#F7F9FC", fg=TEXT,
-                 font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(5, 0))
-        tk.Label(latest_card, text="AVAILABLE VERSION", bg="#F7F9FC", fg=MUTED,
+        tk.Label(current_card, textvariable=self.current_var, bg=PANEL_ALT, fg=TEXT,
+                 font=("Segoe UI", 12, "bold")).pack(anchor="w", pady=(6, 0))
+        tk.Label(latest_card, text="LATEST RELEASE", bg="#102F55", fg="#80B9FF",
                  font=("Segoe UI", 8, "bold")).pack(anchor="w")
-        tk.Label(latest_card, textvariable=self.latest_var, bg="#F7F9FC", fg=TEXT,
-                 font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(5, 0))
+        tk.Label(latest_card, textvariable=self.latest_var, bg="#102F55", fg=TEXT,
+                 font=("Segoe UI", 12, "bold")).pack(anchor="w", pady=(6, 0))
 
+        # Progress area sits in its own blue-toned section.
         progress_area = tk.Frame(outer, bg=BG)
         progress_area.pack(fill="x", pady=(22, 0))
-        tk.Label(progress_area, text="DOWNLOAD PROGRESS", bg=BG, fg=MUTED,
-                 font=("Segoe UI", 8, "bold")).pack(anchor="w", pady=(0, 8))
+        progress_top = tk.Frame(progress_area, bg=BG)
+        progress_top.pack(fill="x", pady=(0, 9))
+        tk.Label(progress_top, text="UPDATE PROGRESS", bg=BG, fg="#80B9FF",
+                 font=("Segoe UI", 8, "bold")).pack(side="left")
+        self.progress_percent = tk.StringVar(value="")
+        tk.Label(progress_top, textvariable=self.progress_percent, bg=BG, fg=TEXT,
+                 font=("Segoe UI", 9, "bold")).pack(side="right")
         style = ttk.Style(self)
         style.theme_use("clam")
         style.configure("Updater.Horizontal.TProgressbar",
-                        troughcolor="#E3E8F0", background=BLUE,
-                        bordercolor="#E3E8F0", lightcolor=BLUE,
-                        darkcolor=BLUE, thickness=12)
+                        troughcolor="#142B46", background=BLUE,
+                        bordercolor="#142B46", lightcolor=BLUE,
+                        darkcolor=BLUE, thickness=13)
+        style.configure("Updater.Horizontal.TProgressbar", troughrelief="flat")
         self.progress = ttk.Progressbar(progress_area, style="Updater.Horizontal.TProgressbar",
                                          mode="determinate", maximum=100, value=0)
         self.progress.pack(fill="x")
-        self.progress_label = tk.Label(progress_area, text="",
+        self.progress_label = tk.Label(progress_area, text="Waiting for release information…",
                                         bg=BG, fg=MUTED,
                                         font=("Segoe UI", 9), anchor="w")
-        self.progress_label.pack(fill="x", pady=(7, 0))
+        self.progress_label.pack(fill="x", pady=(8, 0))
 
         footer = tk.Frame(outer, bg=BG)
         footer.pack(fill="x", side="bottom", pady=(22, 0))
         self.update_btn = tk.Button(
-            footer, text="Update", command=self.start_update,
-            bg=BLUE, fg="#FFFFFF", activebackground="#1F56BC",
+            footer, text="  UPDATE NOW  ", command=self.start_update,
+            bg=BLUE, fg="#FFFFFF", activebackground=BLUE_HOVER,
             activeforeground="#FFFFFF", relief="flat", bd=0,
-            font=("Segoe UI", 10, "bold"), padx=22, pady=10,
+            font=("Segoe UI", 10, "bold"), padx=19, pady=11,
             state="disabled", cursor="hand2")
         self.update_btn.pack(side="left")
         self.retry_btn = tk.Button(
             footer, text="Check again", command=self.check_updates,
-            bg=WHITE, fg=TEXT, activebackground="#EDF1F7",
-            activeforeground=TEXT, relief="solid", bd=1,
-            highlightthickness=0, font=("Segoe UI", 9),
-            padx=16, pady=9, state="disabled", cursor="hand2")
-        self.retry_btn.pack(side="left", padx=(9, 0))
+            bg=PANEL_ALT, fg="#C7D9F0", activebackground="#193B60",
+            activeforeground="#FFFFFF", relief="flat", bd=0,
+            font=("Segoe UI", 9, "bold"), padx=16, pady=11,
+            state="disabled", cursor="hand2")
+        self.retry_btn.pack(side="left", padx=(10, 0))
         self.cancel_btn = tk.Button(
             footer, text="Cancel", command=self.cancel_download,
-            bg=WHITE, fg="#A23B45", activebackground="#FCEEEF",
-            activeforeground="#A23B45", relief="solid", bd=1,
-            highlightthickness=0, font=("Segoe UI", 9),
-            padx=16, pady=9, state="disabled", cursor="hand2")
-        self.cancel_btn.pack(side="left", padx=(9, 0))
+            bg="#2A2033", fg="#FF9CA8", activebackground="#402638",
+            activeforeground="#FFFFFF", relief="flat", bd=0,
+            font=("Segoe UI", 9, "bold"), padx=16, pady=11,
+            state="disabled", cursor="hand2")
+        self.cancel_btn.pack(side="left", padx=(10, 0))
         self.close_btn = tk.Button(
             footer, text="Close", command=self.close,
-            bg=BG, fg=MUTED, activebackground="#E8ECF3",
+            bg=BG, fg=MUTED, activebackground="#142B46",
             activeforeground=TEXT, relief="flat", bd=0,
-            font=("Segoe UI", 9), padx=16, pady=9, cursor="hand2")
+            font=("Segoe UI", 9), padx=16, pady=11, cursor="hand2")
         self.close_btn.pack(side="right")
 
         self.after(100, self.poll_events)
@@ -406,9 +433,11 @@ class Updater(tk.Tk):
                     self.progress.stop()
                     self.progress.configure(mode="determinate", value=max(0, min(100, percent)))
                     if total:
-                        self.progress_label.configure(text=f"Downloaded {done / 1048576:.1f} MB of {total / 1048576:.1f} MB ({percent:.0f}%)")
+                        self.progress_label.configure(text=f"Downloaded {done / 1048576:.1f} MB of {total / 1048576:.1f} MB")
+                        self.progress_percent.set(f"{percent:.0f}%")
                     else:
                         self.progress_label.configure(text=f"Downloaded {done / 1048576:.1f} MB")
+                        self.progress_percent.set(f"{percent:.0f}%")
                 elif kind == "check_ok":
                     _, current, latest, asset, cache_note = event
                     self.progress.stop()
@@ -431,6 +460,7 @@ class Updater(tk.Tk):
                         self.detail_var.set(cache_note or f"Your installed version is {display_version(current)}. Select Update Now to download and install the official release.")
                         self.update_btn.configure(state="normal")
                     self.progress_label.configure(text="")
+                    self.progress_percent.set("")
                 elif kind == "installed":
                     _, tag, launched, detail = event
                     self.progress.stop()
@@ -443,7 +473,8 @@ class Updater(tk.Tk):
                     self.detail_var.set(detail)
                     self.update_btn.configure(state="disabled")
                     self.retry_btn.configure(state="normal")
-                    self.progress_label.configure(text="Download checked and installed.")
+                    self.progress_label.configure(text="Update installed successfully.")
+                    self.progress_percent.set("100%")
                 elif kind == "cancelled":
                     self.progress.stop()
                     self.progress.configure(value=0)
