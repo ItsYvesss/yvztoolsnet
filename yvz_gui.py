@@ -368,7 +368,19 @@ class App(tk.Tk):
         try:
             self._window_icon_img = tk.PhotoImage(file=str(BASE / 'yvztools_logo.png'))
             self.iconphoto(True, self._window_icon_img)
-        except (tk.TclError, OSError):
+            # Explicitly set both native Windows window/taskbar icon slots.
+            # Tk's iconphoto alone can leave the generic Python icon on some builds.
+            if sys.platform == 'win32':
+                self.update_idletasks()
+                icon_handle = ctypes.windll.user32.LoadImageW(
+                    None, str(BASE / 'yvztools.ico'), 1, 0, 0, 0x0010 | 0x0040
+                )
+                if icon_handle:
+                    hwnd = self.winfo_id()
+                    ctypes.windll.user32.SendMessageW(hwnd, 0x0080, 0, icon_handle)
+                    ctypes.windll.user32.SendMessageW(hwnd, 0x0080, 1, icon_handle)
+                    self._native_app_icon_handle = icon_handle
+        except (tk.TclError, OSError, AttributeError):
             self._window_icon_img = None
         self.protocol('WM_DELETE_WINDOW', self.on_exit)
         self.last_extracted = None
@@ -592,39 +604,7 @@ class App(tk.Tk):
         self.header_frame = top
         title_row = tk.Frame(top, bg=BG)
         title_row.pack(fill='x')
-        # ASTROWORLD cover is only the main-header mark in ASTROWORLD theme.
-        # Every other theme uses the normal Eve/YVZTools brand mark.
-        if self.theme_name == 'astroworld':
-            try:
-                self._astroworld_header_source = Image.open(
-                    BASE / 'assets' / 'astroworld_cover.png').convert('RGBA')
-                self._astroworld_header_img = ImageTk.PhotoImage(
-                    self._astroworld_header_source.resize((64, 64), Image.Resampling.LANCZOS))
-                tk.Label(title_row, image=self._astroworld_header_img, bg=BG, bd=0,
-                         highlightthickness=0).pack(side='left', padx=(0, 13))
-            except (tk.TclError, OSError):
-                self._astroworld_header_source = None
-                self._astroworld_header_img = None
-                brand_mark = tk.Frame(title_row, bg=PURPLE, width=48, height=48,
-                                      highlightthickness=1, highlightbackground=CYAN)
-                brand_mark.pack(side='left', padx=(0, 13)); brand_mark.pack_propagate(False)
-                tk.Label(brand_mark, text='A', bg=PURPLE, fg=TEXT,
-                         font=('Segoe UI Black', 22)).pack(expand=True)
-        else:
-            self._astroworld_header_img = None
-            try:
-                # Render the header logo at a crisp 64x64 using Lanczos instead
-                # of Tk PhotoImage.subsample(), which can make the mark look soft.
-                self._brand_icon_source = Image.open(BASE / 'yvztools_logo.png').convert('RGBA')
-                self._brand_icon_img = ImageTk.PhotoImage(
-                    self._brand_icon_source.resize((64, 64), Image.Resampling.LANCZOS))
-                tk.Label(title_row, image=self._brand_icon_img, bg=BG, bd=0,
-                         highlightthickness=0).pack(side='left', padx=(0, 13))
-            except (tk.TclError, OSError):
-                self._brand_icon_source = None
-                brand_mark = tk.Frame(title_row, bg=BLUE, width=42, height=42, highlightthickness=1, highlightbackground=CYAN)
-                brand_mark.pack(side='left', padx=(0, 11)); brand_mark.pack_propagate(False)
-                tk.Label(brand_mark, text='Y', bg=BLUE, fg='white', font=('Segoe UI Black', 23)).pack(expand=True)
+        # Keep the header clean: show the YVZTOOLS title without a logo beside it.
         brand_text = tk.Frame(title_row, bg=BG)
         brand_text.pack(side='left', pady=(1, 0))
         tk.Label(brand_text, text='YVZTOOLS', bg=BG, fg=TEXT, font=('Segoe UI Black', 22)).pack(anchor='w')
