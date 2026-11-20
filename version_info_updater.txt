@@ -16,11 +16,11 @@ VSVersionInfo(
         [
           StringStruct('CompanyName', 'YVZTOOLS'),
           StringStruct('FileDescription', 'YVZTools Updater'),
-          StringStruct('FileVersion', '7.5.0'),
+          StringStruct('FileVersion', '8.8.0'),
           StringStruct('InternalName', 'YVZTOOLS'),
           StringStruct('OriginalFilename', 'YVZUPDATER.exe'),
           StringStruct('ProductName', 'YVZTools'),
-          StringStruct('ProductVersion', '7.5.0')
+          StringStruct('ProductVersion', '8.8.0')
         ]
       )
     ]),
