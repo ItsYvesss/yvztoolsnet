@@ -397,7 +397,7 @@ class SpaceBackground(tk.Canvas):
             sx = (self.t * 4) % max(w, 1)
             sy = 100 + (self.t * 2) % max(int(h*.55), 1)
             self.create_line(sx, sy, sx+34, sy+9,
-                             fill={'dark':'#B9D7FF','pink':'#F1A8C5','purple':'#D7B8FF','chocolate':'#F0B27A','orange':'#FFD09A','hacker':'#6DFFAA','red':'#FF8797','rainbow':'#FF83D8','astroworld':'#E8C66A'}.get(theme, '#B9D7FF'), width=2)
+                             fill={'dark':'#B9D7FF','pink':'#F1A8C5','purple':'#D7B8FF','chocolate':'#F0B27A','orange':'#FFD09A','hacker':'#6DFFAA','red':'#FF8797','rainbow':'#FF83D8','astroworld':'#E8C66A','plan_a':'#F2D06B'}.get(theme, '#B9D7FF'), width=2)
 
 class App(tk.Tk):
     def __init__(self):
@@ -653,7 +653,7 @@ class App(tk.Tk):
         style.configure('Sub.TLabel', background=BG, foreground=MUTED, font=('Segoe UI', 8))
         style.configure('Card.TFrame', background=PANEL)
         style.configure('Card2.TFrame', background=PANEL2)
-        accent_text = '#111111' if self.theme_name in ('yvl', 'astroworld') else 'white'
+        accent_text = '#211704' if self.theme_name == 'plan_a' else ('#111111' if self.theme_name in ('yvl', 'astroworld') else 'white')
         style.configure('Accent.TButton', font=('Segoe UI Semibold', 8), foreground=accent_text, background=BLUE, padding=(8, 6), borderwidth=0)
         style.map('Accent.TButton', foreground=[('disabled', MUTED)], background=[('active', CYAN), ('disabled', PANEL2)])
         style.configure('Purple.TButton', font=('Segoe UI Semibold', 8), foreground=accent_text, background=BLUE, padding=(8, 6), borderwidth=0)
@@ -684,6 +684,8 @@ class App(tk.Tk):
         tk.Label(brand_text, text='YVZTOOLS', bg=BG, fg=TEXT, font=('Segoe UI Black', 22)).pack(anchor='w')
         tagline = ('♛ KEN CARSON • BLACK LABEL' if self.theme_name == 'yvl' else
                    'TRAVIS SCOTT • ASTROWORLD' if self.theme_name == 'astroworld' else
+                   'PLAN A • GOLD EDITION' if self.theme_name == 'plan_a' else
+                   'HOUSEWIFE • CRIMSON EDITION' if self.theme_name == 'housewife' else
                    'NETMATH SPACE  /  DESKTOP CONTROL CENTER')
         tk.Label(brand_text, text=tagline, bg=BG, fg=BLUE, font=('Segoe UI Semibold', 8)).pack(anchor='w', pady=(0, 1))
         # Update controls are grouped at the far right of the title row.
@@ -847,6 +849,8 @@ class App(tk.Tk):
             copy_fill, copy_hover, copy_text = '#3B2923', '#6B5145', '#FFFFFF'
         elif self.theme_name == 'astroworld':
             copy_fill, copy_hover, copy_text = '#D5A93F', '#F4D77A', '#171006'
+        elif self.theme_name == 'plan_a':
+            copy_fill, copy_hover, copy_text = '#D6A83A', '#F2D06B', '#211704'
         elif self.theme_name == 'purple':
             copy_fill, copy_hover, copy_text = '#7540C5', '#9A68E8', '#FFFFFF'
         self.copy_answer_button = RoundedButton(solhead, 'COPY ANSWER [C]', self.copy_answer,
