@@ -57,6 +57,8 @@ class RoundedButton(tk.Canvas):
             fill, hover = '#318BFA', '#58A8FF'
         elif theme_name in ('red', 'housewife'):
             fill, hover = ('#D92742', '#F0445E') if theme_name == 'red' else ('#E52E49', '#FF526B')
+        elif theme_name == 'plan_a':
+            fill, hover, fg = '#D6A83A', '#F2D06B', '#211704'
         elif theme_name == 'orange':
             fill, hover = '#F28C28', '#FFAD4D'
         elif theme_name == 'yvl':
@@ -197,10 +199,17 @@ class SpaceBackground(tk.Canvas):
         self._housewife_background_source = None
         self._housewife_background_scaled = None
         self._housewife_background_size = None
+        self._plan_a_background_source = None
+        self._plan_a_background_scaled = None
+        self._plan_a_background_size = None
         try:
-            self._housewife_background_source = Image.open(BASE / 'assets' / 'housewife_background.png').convert('RGB')
+            self._housewife_background_source = Image.open(BASE / 'assets' / 'housewife_background.jpg').convert('RGB')
         except (OSError, ValueError):
             self._housewife_background_source = None
+        try:
+            self._plan_a_background_source = Image.open(BASE / 'assets' / 'plan_a_background.jpg').convert('RGB')
+        except (OSError, ValueError):
+            self._plan_a_background_source = None
         try:
             # Use high-quality PIL scaling for both premium artwork themes.
             self._yvl_background_source = Image.open(
@@ -268,7 +277,8 @@ class SpaceBackground(tk.Canvas):
             'yvl': ([('#08060D',0.0),('#120F1B',.3),('#211A30',.62),('#09070F',1.0)], '#B69CFF','#594477','#9B7BFF'),
             'oreo': ([('#F7F3EE',0.0),('#E7E0D8',.3),('#C9BFB4',.62),('#F7F3EE',1.0)], '#3B2923','#6B5145','#241B18'),
             'astroworld': ([('#080603',0.0),('#171006',.35),('#241807',.72),('#090704',1.0)], '#E8C66A','#9A7024','#D5A943'),
-            'housewife': ([('#180609',0.0),('#2B0A10',.35),('#4A111A',.72),('#160509',1.0)], '#FF7185','#9D1E35','#F0445E')
+            'housewife': ([('#180609',0.0),('#2B0A10',.35),('#4A111A',.72),('#160509',1.0)], '#FF7185','#9D1E35','#F0445E'),
+            'plan_a': ([('#100B03',0.0),('#241A08',.35),('#3A2A0C',.72),('#120D04',1.0)], '#F2D06B','#8C671D','#D6A83A')
         }
         bands, star, arc1, arc2 = palettes.get(theme, palettes['dark'])
 
@@ -343,7 +353,25 @@ class SpaceBackground(tk.Canvas):
             except (tk.TclError, OSError, ValueError):
                 self._housewife_background_scaled = None
                 self._housewife_background_size = None
-        if theme in ('astroworld', 'yvl', 'housewife'):
+        if theme == 'plan_a' and self._plan_a_background_source is not None:
+            try:
+                target_size = (max(1, int(w)), max(1, int(h)))
+                if self._plan_a_background_scaled is None or self._plan_a_background_size != target_size:
+                    source = self._plan_a_background_source
+                    scale = max(target_size[0] / source.width, target_size[1] / source.height)
+                    resized_size = (max(target_size[0], int(source.width * scale + 0.5)), max(target_size[1], int(source.height * scale + 0.5)))
+                    resized = source.resize(resized_size, Image.Resampling.LANCZOS)
+                    left = (resized.width - target_size[0]) // 2
+                    top = (resized.height - target_size[1]) // 2
+                    cropped = resized.crop((left, top, left + target_size[0], top + target_size[1]))
+                    cropped = Image.blend(cropped, Image.new('RGB', target_size, '#171006'), 0.20)
+                    self._plan_a_background_scaled = ImageTk.PhotoImage(cropped)
+                    self._plan_a_background_size = target_size
+                self.create_image(0, 0, image=self._plan_a_background_scaled, anchor='nw', tags='plan-a-background')
+            except (tk.TclError, OSError, ValueError):
+                self._plan_a_background_scaled = None
+                self._plan_a_background_size = None
+        if theme in ('astroworld', 'yvl', 'housewife', 'plan_a'):
             return
 
         # Slow parallax stars. The phase creates a subtle twinkle.
@@ -474,11 +502,16 @@ class App(tk.Tk):
                 'label':'💋 HOUSEWIFE', 'BG':'#170509','PANEL':'#260910','PANEL2':'#381019',
                 'TEXT':'#FFF0F2','MUTED':'#D49AA4','ACCENT':'#E52E49',
                 'PURPLE':'#C51F3B','CYAN':'#FF7185','GREEN':'#F0445E','BORDER':'#8F1B30'
+            },
+            'plan_a': {
+                'label':'✦ PLAN A', 'BG':'#100B03','PANEL':'#201707','PANEL2':'#30230B',
+                'TEXT':'#FFF8E7','MUTED':'#C9B47C','ACCENT':'#D6A83A',
+                'PURPLE':'#A77B25','CYAN':'#F2D06B','GREEN':'#E6BD55','BORDER':'#8C671D'
             }
         }
-        if self.theme_name == 'housewife':
+        if self.theme_name in ('housewife', 'plan_a'): 
             try:
-                self._housewife_title_icon = tk.PhotoImage(file=str(BASE / 'assets' / 'housewife_icon.png'))
+                self._housewife_title_icon = tk.PhotoImage(file=str(BASE / 'assets' / ('housewife_icon.png' if self.theme_name == 'housewife' else 'plan_a_icon.png')))
                 self.iconphoto(True, self._housewife_title_icon)
             except (tk.TclError, OSError):
                 self._housewife_title_icon = None
@@ -597,14 +630,14 @@ class App(tk.Tk):
         for index, name in enumerate(self.themes):
             t = self.themes[name]
             card = tk.Frame(grid_frame, bg=t['PANEL'], highlightthickness=2,
-                            highlightbackground=t['ACCENT'], width=142, height=112)
+                            highlightbackground=t['ACCENT'], width=124, height=124)
             card.grid(row=index // columns, column=index % columns, padx=7, pady=7, sticky='nsew')
             card.grid_propagate(False)
             tk.Frame(card, bg=t['ACCENT'], height=8).pack(fill='x')
             btn = tk.Button(card, text=t['label'], command=lambda x=name: choose(x),
                             bg=t['PANEL2'], fg=t['TEXT'], activebackground=t['ACCENT'],
                             activeforeground='white', relief='flat', bd=0,
-                            wraplength=122, justify='center',
+                            wraplength=108, justify='center',
                             font=('Segoe UI Semibold', 9), cursor='hand2')
             btn.pack(fill='both', expand=True, padx=7, pady=7)
         for col in range(columns):
@@ -1857,6 +1890,7 @@ class YVZSplash(tk.Tk):
         'oreo':   dict(top='#F7F3EE', bot='#D8CEC4', star='#3B2923', ring1='#6B5145', ring2='#9B8172', accent='#3B2923', accent2='#76665D', text='#241B18', sub='#4B352C', muted='#76665D', track='#C8B9AC'),
         'astroworld': dict(top='#080604', bot='#1B1308', star='#F4D77A', ring1='#76521B', ring2='#D5A93F', accent='#D5A93F', accent2='#F4D77A', text='#FFF8E8', sub='#F4D77A', muted='#B9A77F', track='#241A0D'),
         'housewife': dict(top='#170509', bot='#3B0D18', star='#FF7185', ring1='#8F1B30', ring2='#E52E49', accent='#E52E49', accent2='#FF7185', text='#FFF0F2', sub='#FF7185', muted='#D49AA4', track='#42101B'),
+        'plan_a': dict(top='#100B03', bot='#241A08', star='#F2D06B', ring1='#8C671D', ring2='#D6A83A', accent='#D6A83A', accent2='#F2D06B', text='#FFF8E7', sub='#F2D06B', muted='#C9B47C', track='#30230B'),
     }
     STAGES = [
         (0.00, 'INITIALIZING CORE SYSTEMS'),
@@ -1895,6 +1929,16 @@ class YVZSplash(tk.Tk):
                                    stipple='gray50', outline='')
             except (tk.TclError, OSError):
                 self._astroworld_splash_image = None
+        if theme in ('housewife', 'plan_a'):
+            try:
+                splash_file = 'housewife_background.jpg' if theme == 'housewife' else 'plan_a_background.jpg'
+                self._theme_splash_image = Image.open(BASE / 'assets' / splash_file).convert('RGB')
+                self._theme_splash_image.thumbnail((self.W, self.H), Image.Resampling.LANCZOS)
+                self._theme_splash_photo = ImageTk.PhotoImage(self._theme_splash_image)
+                c.create_image(self.W / 2, self.H / 2, image=self._theme_splash_photo, anchor='center')
+                c.create_rectangle(0, 0, self.W, self.H, fill='#100B03' if theme == 'plan_a' else '#170509', stipple='gray50', outline='')
+            except (tk.TclError, OSError, ValueError):
+                self._theme_splash_photo = None
 
         # Rich static background: gradient, soft planetary haze and fine grid accents.
         for i in range(0, self.H, 3):
