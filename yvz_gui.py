@@ -509,12 +509,15 @@ class App(tk.Tk):
                 'PURPLE':'#A77B25','CYAN':'#F2D06B','GREEN':'#E6BD55','BORDER':'#8C671D'
             }
         }
-        if self.theme_name in ('housewife', 'plan_a'): 
+        if self.theme_name in ('housewife', 'plan_a'):
             try:
-                self._housewife_title_icon = tk.PhotoImage(file=str(BASE / 'assets' / ('housewife_icon.png' if self.theme_name == 'housewife' else 'plan_a_icon.png')))
-                self.iconphoto(True, self._housewife_title_icon)
-            except (tk.TclError, OSError):
-                self._housewife_title_icon = None
+                title_art = 'housewife_background.jpg' if self.theme_name == 'housewife' else 'plan_a_background.jpg'
+                title_image = Image.open(BASE / 'assets' / title_art).convert('RGB')
+                title_image.thumbnail((64, 64), Image.Resampling.LANCZOS)
+                self._theme_title_icon = ImageTk.PhotoImage(title_image)
+                self.iconphoto(True, self._theme_title_icon)
+            except (tk.TclError, OSError, ValueError):
+                self._theme_title_icon = None
         self.answer_style = self._load_answer_style(self.theme_name)
         self._apply_theme_constants()
         self._build_styles()
